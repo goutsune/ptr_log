@@ -3,7 +3,8 @@ how did this pointer value change. This will give you an idea how the data is co
 
 The next step from here is to write down this information for later use.
 
-== TODO
+TODO
+====
 
  * Add 16-bit pointer support
  * Make a map of commands and their sizes?
