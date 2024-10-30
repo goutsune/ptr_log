@@ -21,6 +21,7 @@ from time import sleep
 def mainloop(
   filename,
   data_base,
+  rom_base,
   lo_ptr,
   hi_ptr,
   emu_offset,
@@ -36,10 +37,10 @@ def mainloop(
 
   # This one is for memory image update.
   mem_h = open(filename, 'rb', buffering=0)
-  mem_h.seek(data_base, os.SEEK_SET)
+  mem_h.seek(rom_base, os.SEEK_SET)
 
   mem_image = mem_h.read(size)
-  mem_h.seek(data_base, os.SEEK_SET)
+  mem_h.seek(rom_base, os.SEEK_SET)
 
   # read once to prepare 0 ztep pointer
   data_h.seek(data_base + lo_ptr, os.SEEK_SET)
@@ -76,7 +77,7 @@ def mainloop(
       mem_image = mem_h.read(size)
       if mem_image is None or len(mem_image) < size:
         print('! READ FAIL')
-      mem_h.seek(data_base, os.SEEK_SET)
+      mem_h.seek(rom_base, os.SEEK_SET)
 
     # On forward jump display data after old pointer for inspection
     if step > jump_thr:
@@ -120,14 +121,16 @@ def main():
   parser.add_argument('filename', type=str,
     help='Memory file to read from (this can be normal file too, if it is updated frequently')
   parser.add_argument('base_offset', type=str,
-    help='Global memory offset for RAM file, this denotes beginning of emulator memory')
+    help='Global memory offset for RAM file, this denotes beginning of emulator RAM')
   parser.add_argument('lo_ptr', type=str,
     help='Virtual pointer lo byte')
   parser.add_argument('hi_ptr', type=str,
     help='Virtual pointer hi byte')
 
   parser.add_argument('-e', '--emu-offset', type=str, default="0x0",
-    help='Pointer offset when referencing emulator memory')
+    help='Pointer offset when dereferencing emulator memory')
+  parser.add_argument('-r', '--rom-offset', type=str, default="0x0",
+    help='Use this memory offset to read ROM image, defaults base offset')
   parser.add_argument('-j', '--jump-threshold', type=str, default="0x8",
     help='Threshold for detecting forward jumps.')
   parser.add_argument('-l', '--lookup', type=str, default="0x4",
@@ -151,10 +154,13 @@ def main():
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
   update_mem = bool(args.update_mem)
+  rom_offset = int(args.rom_offset, 0)
+  if rom_offset == 0:
+    rom_offset = base_offset
 
   # Print all the metadata
   print('FILE: {}'.format(filename))
-  print('BASE: {:08x},  SIZE: {:04x}'.format(base_offset, size))
+  print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(base_offset, rom_offset, size))
   print('PTR@: {:04x}:{:04x}, OFFSET: {:04x}'.format(lo_ptr, hi_ptr, emu_offset))
   print('════════════╤════════════════')
 
@@ -163,6 +169,7 @@ def main():
     mainloop(
       filename,
       base_offset,
+      rom_offset,
       lo_ptr,
       hi_ptr,
       emu_offset,
