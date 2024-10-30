@@ -81,9 +81,6 @@ def mainloop(
 
     # On forward jump display data after old pointer for inspection
     if step > jump_thr:
-      mem_h.seek(data_base, os.SEEK_SET)  # Update memory image on jumps
-      mem_image = mem_h.read(size)
-
       print('>{{{:s}}}'.format(
         mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
 
