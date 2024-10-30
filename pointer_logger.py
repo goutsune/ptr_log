@@ -70,7 +70,7 @@ def mainloop(
     step = ptr_val - old_ptr_val
 
     # Print from whence we read data
-    print('{:04X}+{:02X}{:+5X}│'.format(old_ptr_val, emu_offset, step), end='')
+    print('{:04X}{:+5X}│'.format(old_ptr_val, step), end='')
 
     # Update memory image on jumps
     if update_mem and (step > jump_thr or step < 0):
@@ -79,14 +79,16 @@ def mainloop(
         print('! READ FAIL')
       mem_h.seek(rom_base, os.SEEK_SET)
 
-    # On forward jump display data after old pointer for inspection
+    # On forward jump display data after old pointer and before new pointer for inspection
     if step > jump_thr:
-      print('>{{{:s}}}'.format(
+      print('►{{{:s}}}'.format(
         mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+      print('         │▴{{{:s}}}'.format(
+        mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
 
     # Main print routine
     elif step > 0:
-      print('= {:s}'.format(
+      print('∙ {:s}'.format(
         mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+step].hex(' ')))
 
       # Extra debug output.
@@ -101,10 +103,13 @@ def mainloop(
       #  mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' '),
       #  mem_image[ptr_val+emu_offset:ptr_val+emu_offset+lookup].hex(' ')))
 
-    # For backward jump we only care about data after poitner, we know what's behind
+    # We jumped backward, display what's behind old pointer and before new pointer
     else:
-      print('<{{{:s}}}'.format(
+      print('◄{{{:s}}}'.format(
         mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+
+      print('         │▴{{{:s}}}'.format(
+        mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
@@ -159,7 +164,7 @@ def main():
   print('FILE: {}'.format(filename))
   print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(base_offset, rom_offset, size))
   print('PTR@: {:04x}:{:04x}, OFFSET: {:04x}'.format(lo_ptr, hi_ptr, emu_offset))
-  print('════════════╤════════════════')
+  print('═════════╤════════════════')
 
   # Start the main loop
   try:
