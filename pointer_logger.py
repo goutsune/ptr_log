@@ -28,6 +28,7 @@ def mainloop(
   size,
   jump_thr=0x20,
   lookup=0x4,
+  wrap=0x40,
   update_mem=False,
   frequency=120):
 
@@ -88,8 +89,16 @@ def mainloop(
 
     # Main print routine
     elif step > 0:
-      print('∙ {:s}'.format(
-        mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+step].hex(' ')))
+      from_o = old_ptr_val + emu_offset
+      to_ofc = old_ptr_val + emu_offset + step
+      tokens = mem_image[from_o:to_ofc]
+
+      old_pos = 0
+      for pos in range(0, len(tokens), wrap):
+        if pos:  # For consecutive lines
+          print('         │', end='')
+        print('∙ {:s}'.format(tokens[pos:wrap+pos].hex(' ')))
+        old_pos = pos
 
       # Extra debug output.
 
@@ -137,6 +146,8 @@ def main():
     help='Threshold for detecting forward jumps.')
   parser.add_argument('-l', '--lookup', type=str, default="0x4",
     help='Explore this many bytes when jump is detected')
+  parser.add_argument('-w', '--wrap', type=str, default="0x40",
+    help='Wrap hex output after this many bytes')
   parser.add_argument('-u', '--update-mem', type=int, default=0,
     help='Refresh memory image on every jump [0/1]')
   parser.add_argument('-f', '--frequency', type=int, default=120,
@@ -155,6 +166,7 @@ def main():
   emu_offset = int(args.emu_offset, 0)
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
+  wrap = int(args.wrap, 0)
   update_mem = bool(args.update_mem)
   rom_offset = int(args.rom_offset, 0)
   if rom_offset == 0:
@@ -178,6 +190,7 @@ def main():
       size,
       jump_thr=jump_threshold,
       lookup=lookup,
+      wrap=wrap,
       update_mem=update_mem,
       frequency=args.frequency)
   except KeyboardInterrupt:
