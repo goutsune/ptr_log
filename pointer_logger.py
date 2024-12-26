@@ -17,18 +17,52 @@ import os, sys, io
 import argparse
 from time import sleep
 
-def lohi_pointer_resolver(memory, global_offset, lo_ptr, hi_ptr):
+def lohi_pointer_resolver(memory, lo_ptr, hi_ptr):
   ''' Lo + Hi byte pointer resolver.
-  This is the most simple resolver here. It will take pointer offsets for 2 bytes,
-  read these byte values from code segment and returns the pointer offset to analyze.
+  A very common case, we have non-linear memory location for 16-bit pointer.
+  It will take pointer offsets for those 2 bytes, read these byte values
+  from code segment and combine them.
   '''
 
-  memory.seek(global_offset + lo_ptr, os.SEEK_SET)
-  lo_byte = memory.read(1)
-  memory.seek(global_offset + hi_ptr, os.SEEK_SET)
-  hi_byte = memory.read(1)
+  lo_byte = memory[lo_ptr]
+  hi_byte = memory[hi_ptr]
 
   return int.from_bytes(hi_byte + lo_byte)
+
+
+class Memory:
+  ''' Class to provide byte getter from a relative memory offset.
+  '''
+  base = None
+  handle = None
+
+  def __init__(self, filename, base_offset):
+
+    handle = open(filename, 'rb', buffering=0)
+    handle.seek(base_offset, os.SEEK_SET)
+
+    self.base = base_offset
+    self.handle = handle
+
+  # Implement index-like file access with very basic slicing support
+  def __getitem__(self, index):
+
+    if type(index) == slice:
+      amount = index.stop - index.start
+      offset = index.start
+    else:
+      amount = 1
+      offset = index
+
+    if amount < 1:
+      raise IndexError('Can\'t read nothing!')
+
+    self.handle.seek(self.base + offset, os.SEEK_SET)
+    data = self.handle.read(amount)
+    return data
+
+  def close(self):
+    self.handle.close()
 
 
 # Main processing loop
@@ -46,26 +80,20 @@ def mainloop(
   update_mem=False,
   frequency=120):
 
-  # Code block, read every time when resolving pointers
-  code_h = open(filename, 'rb', buffering=0)
-  code_h.seek(code_offset, os.SEEK_SET)
 
-  # Data block, static by default, defaults to code block
-  data_h = open(filename, 'rb', buffering=0)
-  data_h.seek(data_offset, os.SEEK_SET)
-
-  data_image = data_h.read(size)
-  data_h.seek(data_offset, os.SEEK_SET)
+  code = Memory(filename, code_offset)  # Code block, read every time when resolving pointers
+  data = Memory(filename, data_offset)  # Data block, static by default, defaults to code block
 
   # Setup global state
-  old_ptr_val = lohi_pointer_resolver(code_h, code_offset, lo_ptr, hi_ptr)
+  data_image = data[0:size]
+  old_ptr_val = lohi_pointer_resolver(code, lo_ptr, hi_ptr)
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
 
   while True:
     # calculate pointer
-    ptr_val = lohi_pointer_resolver(code_h, code_offset, lo_ptr, hi_ptr)
+    ptr_val = lohi_pointer_resolver(code, lo_ptr, hi_ptr)
 
     # Skip nops
     if old_ptr_val == ptr_val:
@@ -79,10 +107,9 @@ def mainloop(
 
     # Update memory image on jumps
     if update_mem and (step > jump_thr or step < 0):
-      data_image = data_h.read(size)
+      data_image = data[0:size]
       if data_image is None or len(data_image) < size:
         print('! READ FAIL')
-      data_h.seek(data_offset, os.SEEK_SET)
 
     # On forward jump display data after old pointer and before new pointer for inspection
     if step > jump_thr:
