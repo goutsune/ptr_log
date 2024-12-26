@@ -17,6 +17,20 @@ import os, sys, io
 import argparse
 from time import sleep
 
+def lohi_pointer_resolver(memory, global_offset, lo_ptr, hi_ptr):
+  ''' Lo + Hi byte pointer resolver.
+  This is the most simple resolver here. It will take pointer offsets for 2 bytes,
+  read these byte values from code segment and returns the pointer offset to analyze.
+  '''
+
+  memory.seek(global_offset + lo_ptr, os.SEEK_SET)
+  lo_byte = memory.read(1)
+  memory.seek(global_offset + hi_ptr, os.SEEK_SET)
+  hi_byte = memory.read(1)
+
+  return int.from_bytes(hi_byte + lo_byte)
+
+
 # Main processing loop
 def mainloop(
   filename,
@@ -43,25 +57,15 @@ def mainloop(
   data_image = data_h.read(size)
   data_h.seek(data_offset, os.SEEK_SET)
 
-  # read once to prepare 0 step pointer
-  code_h.seek(code_offset + lo_ptr, os.SEEK_SET)
-  lo_byte = code_h.read(1)
-  code_h.seek(code_offset + hi_ptr, os.SEEK_SET)
-  hi_byte = code_h.read(1)
-
   # Setup global state
-  old_ptr_val = int.from_bytes(hi_byte+lo_byte)
+  old_ptr_val = lohi_pointer_resolver(code_h, code_offset, lo_ptr, hi_ptr)
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
 
   while True:
     # calculate pointer
-    code_h.seek(code_offset + lo_ptr, os.SEEK_SET)
-    lo_byte = code_h.read(1)
-    code_h.seek(code_offset + hi_ptr, os.SEEK_SET)
-    hi_byte = code_h.read(1)
-    ptr_val = int.from_bytes(hi_byte+lo_byte)
+    ptr_val = lohi_pointer_resolver(code_h, code_offset, lo_ptr, hi_ptr)
 
     # Skip nops
     if old_ptr_val == ptr_val:
