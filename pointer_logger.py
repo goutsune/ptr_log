@@ -24,35 +24,37 @@ def word_pointer_resolver(memory, ptr):
   The pointer is stored as LE word at specified memory location.
   '''
 
-  lo_byte, hi_byte = memory[ptr, 2]
+  ptr = int(ptr, 0)
+  lo_byte, hi_byte = memory[ptr:ptr+2]
   return int.from_bytes((hi_byte, lo_byte))
 
 
-def hilo_pointer_resolver(memory, lo_ptr, hi_ptr):
+def hilo_pointer_resolver(memory, hi_ptr, lo_ptr):
   ''' Lo + Hi byte pointer resolver.
   A very common case, we have non-linear memory location for 16-bit pointer.
   It will take pointer offsets for those 2 bytes, read these byte values
   from code segment and combine them.
   '''
 
-  lo_byte = memory[lo_ptr]
-  hi_byte = memory[hi_ptr]
+  hi_byte = memory[int(hi_ptr, 0)]
+  lo_byte = memory[int(lo_ptr, 0)]
 
   return int.from_bytes(hi_byte + lo_byte)
 
+
 RESOLVER_MAP = {
-  'hilo_resolver': (
+  'hilo': (
     hilo_pointer_resolver,
     'Read 2 16-bit pointers from separate\n'
     '  memory locations.\n'
     '    Format: HI_BYTE_PTR:LO_BYTE_PTR e.g. 0x324:0x314\n'),
-  'word_resolver': (
+  'word': (
     word_pointer_resolver,
     'Read single 16-pointer from memory,\n'
     '  LE is assumed.\n'
     '    Format: POINTER, e.g. 0x14\n'
   ),
-  'table_resolver': (
+  'table': (
     'lookup_table_resolver',
     'Get the data pointer from lookup table, \n'
     '  index in this table and offset inside that data index.\n'
@@ -61,6 +63,7 @@ RESOLVER_MAP = {
     '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER\n'
   )
 }
+
 
 class Memory:
   ''' Class to provide byte getter from a relative memory offset.
@@ -102,8 +105,8 @@ def mainloop(
   filename,
   code_offset,
   data_offset,
-  lo_ptr,
-  hi_ptr,
+  resolver,
+  resolver_args,
   emu_offset,
   size,
   jump_thr=0x20,
@@ -118,14 +121,14 @@ def mainloop(
 
   # Setup global state
   data_image = data[0:size]
-  old_ptr_val = hilo_pointer_resolver(code, lo_ptr, hi_ptr)
+  old_ptr_val = resolver(code, *resolver_args)
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
 
   while True:
     # calculate pointer
-    ptr_val = hilo_pointer_resolver(code, lo_ptr, hi_ptr)
+    ptr_val = resolver(code, *resolver_args)
 
     # Skip nops
     if old_ptr_val == ptr_val:
@@ -197,12 +200,11 @@ def main():
     help='Memory file to read from (this can be normal file too, if it is updated frequently')
   parser.add_argument('code_offset', type=str,
     help='Global memory offset for RAM file, this denotes beginning of emulator RAM')
-  parser.add_argument('lo_ptr', type=str,
-    help='Virtual pointer lo byte')
-  parser.add_argument('hi_ptr', type=str,
-    help='Virtual pointer hi byte')
+  parser.add_argument('resolver_settings', type=str,
+    help='Arguments for resolver function')
+
   resolver_help = '\n'.join(f'{key}: {value[1]}' for key, value in RESOLVER_MAP.items())
-  parser.add_argument('-M', '--resolve-method', type=str, default='hilo_resolver', choices=RESOLVER_MAP,
+  parser.add_argument('-M', '--resolve-method', type=str, default='hilo', choices=RESOLVER_MAP,
     help=f'Function to resolve driver-specific data into memory offset:\n{resolver_help}')
   parser.add_argument('-e', '--emu-offset', type=str, default="0x0",
     help='Pointer offset when dereferencing emulator memory')
@@ -227,8 +229,8 @@ def main():
   filename = args.filename
   code_offset = int(args.code_offset, 0)
   size = int(args.size, 0)
-  lo_ptr = int(args.lo_ptr, 0)
-  hi_ptr = int(args.hi_ptr, 0)
+  resolver = RESOLVER_MAP[args.resolve_method][0]
+  resolver_args = args.resolver_settings.split(':')
   emu_offset = int(args.emu_offset, 0)
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
@@ -241,7 +243,6 @@ def main():
   # Print all the metadata
   print('FILE: {}'.format(filename))
   print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(code_offset, data_offset, size))
-  print('PTR@: {:04x}:{:04x}, OFFSET: {:04x}'.format(lo_ptr, hi_ptr, emu_offset))
   print('═════════╤════════════════')
 
   # Start the main loop
@@ -250,8 +251,8 @@ def main():
       filename,
       code_offset,
       data_offset,
-      lo_ptr,
-      hi_ptr,
+      resolver,
+      resolver_args,
       emu_offset,
       size,
       jump_thr=jump_threshold,
