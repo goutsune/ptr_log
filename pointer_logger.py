@@ -17,45 +17,60 @@ import os, sys, io
 import argparse
 from time import sleep
 
-
-def word_pointer_resolver(memory, ptr):
+class WordResolver:
   ''' Single pointer value resolver.
   Probably the simpliest case possible.
   The pointer is stored as LE word at specified memory location.
   '''
 
-  ptr = int(ptr, 0)
-  lo_byte, hi_byte = memory[ptr:ptr+2]
-  return int.from_bytes((hi_byte, lo_byte))
+  pointer = None
+
+  def __init__(self, pointer):
+    self.pointer = int(pointer, 0)
+
+  def __call__(self, memory):
+    lo_byte, hi_byte = memory[self.pointer:self.pointer + 2]
+    return int.from_bytes((hi_byte, lo_byte))
 
 
-def hilo_pointer_resolver(memory, hi_ptr, lo_ptr):
+class HiLoResolver:
   ''' Lo + Hi byte pointer resolver.
   A very common case, we have non-linear memory location for 16-bit pointer.
   It will take pointer offsets for those 2 bytes, read these byte values
   from code segment and combine them.
   '''
 
-  hi_byte = memory[int(hi_ptr, 0)]
-  lo_byte = memory[int(lo_ptr, 0)]
+  high = None
+  low = None
 
-  return int.from_bytes(hi_byte + lo_byte)
+  def __init__(self, hi_ptr, lo_ptr):
+    self.high = int(hi_ptr, 0)
+    self.low = int(lo_ptr, 0)
+
+  def __call__(self, memory):
+
+    hi_byte = memory[self.high]
+    lo_byte = memory[self.low]
+
+    return int.from_bytes(hi_byte + lo_byte)
 
 
 RESOLVER_MAP = {
   'hilo': (
-    hilo_pointer_resolver,
+    HiLoResolver,
     'Read 2 16-bit pointers from separate\n'
     '  memory locations.\n'
     '    Format: HI_BYTE_PTR:LO_BYTE_PTR e.g. 0x324:0x314\n'),
+
   'word': (
-    word_pointer_resolver,
+    WordResolver,
     'Read single 16-pointer from memory,\n'
     '  LE is assumed.\n'
     '    Format: POINTER, e.g. 0x14\n'
   ),
+
   'table': (
-    'lookup_table_resolver',
+    'TableResolver',
     'Get the data pointer from lookup table, \n'
     '  index in this table and offset inside that data index.\n'
     '  Table is assumed to contain WORD LE pointers, index\n'
@@ -106,7 +121,6 @@ def mainloop(
   code_offset,
   data_offset,
   resolver,
-  resolver_args,
   emu_offset,
   size,
   jump_thr=0x20,
@@ -115,20 +129,19 @@ def mainloop(
   update_mem=False,
   frequency=120):
 
-
   code = Memory(filename, code_offset)  # Code block, read every time when resolving pointers
   data = Memory(filename, data_offset)  # Data block, static by default, defaults to code block
 
   # Setup global state
   data_image = data[0:size]
-  old_ptr_val = resolver(code, *resolver_args)
+  old_ptr_val = resolver(code)
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
 
   while True:
     # calculate pointer
-    ptr_val = resolver(code, *resolver_args)
+    ptr_val = resolver(code)
 
     # Skip nops
     if old_ptr_val == ptr_val:
@@ -231,6 +244,7 @@ def main():
   size = int(args.size, 0)
   resolver = RESOLVER_MAP[args.resolve_method][0]
   resolver_args = args.resolver_settings.split(':')
+  resolver_instance = resolver(*resolver_args)
   emu_offset = int(args.emu_offset, 0)
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
@@ -251,8 +265,7 @@ def main():
       filename,
       code_offset,
       data_offset,
-      resolver,
-      resolver_args,
+      resolver_instance,
       emu_offset,
       size,
       jump_thr=jump_threshold,
