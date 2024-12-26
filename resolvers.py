@@ -1,6 +1,6 @@
 '''Various resolver techniques are to be defined in this file.
 '''
-
+import pudb
 
 class WordResolver:
   ''' Single pointer value resolver.
@@ -38,3 +38,108 @@ class HiLoResolver:
     lo_byte = memory[self.low]
 
     return int.from_bytes(hi_byte + lo_byte)
+
+
+# TODO: Rewrite this crap after some sleep, only order resolver is working now
+class TableResolver:
+  ''' Table[Index] + Offset resolver.
+  This seems to be a common case in C64 music scene. The driver does not store
+  direct pointer to the next command, instead, data is organized into table of
+  pointers, each containing a block of commands. The data is then referenced in
+  relation to this block.
+  '''
+
+  data_table_ptr = None
+  data_index_ptr = None
+  data_offset_ptr = None
+  data_offset_size = None
+  data_index_step = None
+
+  def __init__(
+    self,
+    data_table_ptr,
+    data_index_ptr,
+    data_offset_ptr,
+    data_index_step='1',
+    data_offset_size='b'):
+
+    self.data_table_ptr = int(data_table_ptr, 0)
+    self.data_index_ptr = int(data_index_ptr, 0)
+    self.data_index_step = int(data_index_step, 0)
+    self.data_offset_ptr = int(data_offset_ptr, 0)
+
+    if data_offset_size == 'b':
+      self.data_offset_size = 1
+    elif data_offset_size == 'w':
+      self.data_offset_size = 2
+    else:
+      raise ValueError('Expected either "b" or "w" argument for offset pointer')
+
+  def __call__(self, memory):
+
+    # Get data index, assume it's 1 byte, support stepping for interleaved data
+    index = int.from_bytes(memory[self.data_index_ptr]) * self.data_index_step
+
+    # Get table offset, assume it's LE word
+    table_ptr = self.data_table_ptr + index * 2
+    table_offset = int.from_bytes(memory[self.data_offset_ptr:self.data_offset_ptr+2], 'little')
+
+    # Get table data offset, assume it's 1 byte as well
+    data_offset = int.from_bytes(memory[self.data_offset_ptr])
+
+    # Get our data pointer from data table and offset.
+    command_offset = table_offset + data_offset
+
+    return command_offset
+
+
+# TODO: Generalize implementation over TableResolver
+class OrderTableResolver:
+  ''' Table[Orders[OrderIndex]] + Offset resolver.
+  A more convoluted example, where order is also an offset to order table
+  '''
+
+  order_table_ptr = None
+  data_table_ptr = None
+  order_index_ptr = None
+  data_offset_ptr = None
+  data_offset_size = None
+
+  def __init__(
+    self,
+    order_table_ptr,
+    data_table_ptr,
+    order_index_ptr,
+    data_offset_ptr,
+    data_offset_size='b'):
+
+    self.order_table_ptr = int(order_table_ptr, 0)
+    self.data_table_ptr = int(data_table_ptr, 0)
+    self.order_index_ptr = int(order_index_ptr, 0)
+    self.data_offset_ptr = int(data_offset_ptr, 0)
+
+    if data_offset_size == 'b':
+      self.data_offset_size = 1
+    elif data_offset_size == 'w':
+      self.data_offset_size = 2
+    else:
+      raise ValueError('Expected either "b" or "w" argument for offset pointer')
+
+  def __call__(self, memory):
+
+    # Get order index
+    index = int.from_bytes(memory[self.order_index_ptr])
+    # Get pattern number in order list
+    order = int.from_bytes(memory[self.order_table_ptr + index])
+    # Get pattern offset for this number, assume it's LE word in table
+    data_ptr_ptr = self.data_table_ptr + order*2
+    data_ptr = int.from_bytes(memory[data_ptr_ptr:data_ptr_ptr+2], 'little')
+    # Get data offset for this pattern
+    if self.data_offset_size == 1:
+      data_offset = int.from_bytes(memory[self.data_offset_ptr])
+    else:
+      data_offset = int.from_bytes(memory[self.data_offset_ptr:self.data_offset_ptr+2], 'little')
+
+    command_offset = data_ptr + data_offset
+
+    return command_offset

@@ -16,16 +16,10 @@ TODO:
 import argparse
 from time import sleep
 
-from resolvers import HiLoResolver, WordResolver
+from resolvers import HiLoResolver, WordResolver, TableResolver, OrderTableResolver
 from memory_reader import Memory
 
 RESOLVER_MAP = {
-  'hilo': (
-    HiLoResolver,
-    'Read 2 16-bit pointers from separate\n'
-    '  memory locations.\n'
-    '    Format: HI_BYTE_PTR:LO_BYTE_PTR e.g. 0x324:0x314\n'),
-
   'word': (
     WordResolver,
     'Read single 16-pointer from memory,\n'
@@ -33,14 +27,27 @@ RESOLVER_MAP = {
     '    Format: POINTER, e.g. 0x14\n'
   ),
 
+  'hilo': (
+    HiLoResolver,
+    'Read 2 16-bit pointers from separate\n'
+    '  memory locations.\n'
+    '    Format: HI_BYTE_PTR:LO_BYTE_PTR e.g. 0x324:0x314\n'),
+
   'table': (
-    'TableResolver',
+    TableResolver,
     'Get the data pointer from lookup table, \n'
     '  index in this table and offset inside that data index.\n'
-    '  Table is assumed to contain WORD LE pointers, index\n'
-    '  and offset are assumed to be 8-bit values.\n'
-    '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER\n'
-  )
+    '  Table is assumed to contain WORD LE pointers.\n'
+    '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:INDEX_STEP:OFFSET_SIZE]\n'
+  ),
+
+  'order': (
+    OrderTableResolver,
+    'Get the data pointer from order lookup table, data lookup table, \n'
+    '  index in this table and offset inside that data index.\n'
+    '  Table is assumed to contain WORD LE pointers.\n'
+    '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:OFFSET_SIZE]\n'
+  ),
 }
 
 # Main processing loop
