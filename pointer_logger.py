@@ -20,8 +20,8 @@ from time import sleep
 # Main processing loop
 def mainloop(
   filename,
-  data_base,
-  rom_base,
+  code_offset,
+  data_offset,
   lo_ptr,
   hi_ptr,
   emu_offset,
@@ -32,22 +32,22 @@ def mainloop(
   update_mem=False,
   frequency=120):
 
-  # This will be file_h for the pointer lookup
+  # Code block, read every time when resolving pointers
+  code_h = open(filename, 'rb', buffering=0)
+  code_h.seek(code_offset, os.SEEK_SET)
+
+  # Data block, static by default, defaults to code block
   data_h = open(filename, 'rb', buffering=0)
-  data_h.seek(data_base, os.SEEK_SET)
+  data_h.seek(data_offset, os.SEEK_SET)
 
-  # This one is for memory image update.
-  mem_h = open(filename, 'rb', buffering=0)
-  mem_h.seek(rom_base, os.SEEK_SET)
+  data_image = data_h.read(size)
+  data_h.seek(data_offset, os.SEEK_SET)
 
-  mem_image = mem_h.read(size)
-  mem_h.seek(rom_base, os.SEEK_SET)
-
-  # read once to prepare 0 ztep pointer
-  data_h.seek(data_base + lo_ptr, os.SEEK_SET)
-  lo_byte = data_h.read(1)
-  data_h.seek(data_base + hi_ptr, os.SEEK_SET)
-  hi_byte = data_h.read(1)
+  # read once to prepare 0 step pointer
+  code_h.seek(code_offset + lo_ptr, os.SEEK_SET)
+  lo_byte = code_h.read(1)
+  code_h.seek(code_offset + hi_ptr, os.SEEK_SET)
+  hi_byte = code_h.read(1)
 
   # Setup global state
   old_ptr_val = int.from_bytes(hi_byte+lo_byte)
@@ -57,10 +57,10 @@ def mainloop(
 
   while True:
     # calculate pointer
-    data_h.seek(data_base + lo_ptr, os.SEEK_SET)
-    lo_byte = data_h.read(1)
-    data_h.seek(data_base + hi_ptr, os.SEEK_SET)
-    hi_byte = data_h.read(1)
+    code_h.seek(code_offset + lo_ptr, os.SEEK_SET)
+    lo_byte = code_h.read(1)
+    code_h.seek(code_offset + hi_ptr, os.SEEK_SET)
+    hi_byte = code_h.read(1)
     ptr_val = int.from_bytes(hi_byte+lo_byte)
 
     # Skip nops
@@ -75,23 +75,23 @@ def mainloop(
 
     # Update memory image on jumps
     if update_mem and (step > jump_thr or step < 0):
-      mem_image = mem_h.read(size)
-      if mem_image is None or len(mem_image) < size:
+      data_image = data_h.read(size)
+      if data_image is None or len(data_image) < size:
         print('! READ FAIL')
-      mem_h.seek(rom_base, os.SEEK_SET)
+      data_h.seek(data_offset, os.SEEK_SET)
 
     # On forward jump display data after old pointer and before new pointer for inspection
     if step > jump_thr:
       print('►{{{:s}}}'.format(
-        mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+        data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
       print('         │▴{{{:s}}}'.format(
-        mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
+        data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
 
     # Main print routine
     elif step > 0:
       from_o = old_ptr_val + emu_offset
       to_ofc = old_ptr_val + emu_offset + step
-      tokens = mem_image[from_o:to_ofc]
+      tokens = data_image[from_o:to_ofc]
 
       old_pos = 0
       for pos in range(0, len(tokens), wrap):
@@ -104,21 +104,21 @@ def mainloop(
 
       # This will print values around old pointer
       #print('             _ {:s}|{:s}'.format(
-      #  mem_image[old_ptr_val+emu_offset-lookup:old_ptr_val+emu_offset].hex(' '),
-      #  mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+      #  data_image[old_ptr_val+emu_offset-lookup:old_ptr_val+emu_offset].hex(' '),
+      #  data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
 
       # This will print values around new pointer
       #print('             _ {:s}|{:s}'.format(
-      #  mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' '),
-      #  mem_image[ptr_val+emu_offset:ptr_val+emu_offset+lookup].hex(' ')))
+      #  data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' '),
+      #  data_image[ptr_val+emu_offset:ptr_val+emu_offset+lookup].hex(' ')))
 
     # We jumped backward, display what's behind old pointer and before new pointer
     else:
       print('◄{{{:s}}}'.format(
-        mem_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+        data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
 
       print('         │▴{{{:s}}}'.format(
-        mem_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
+        data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
@@ -131,7 +131,7 @@ def main():
 
   parser.add_argument('filename', type=str,
     help='Memory file to read from (this can be normal file too, if it is updated frequently')
-  parser.add_argument('base_offset', type=str,
+  parser.add_argument('code_offset', type=str,
     help='Global memory offset for RAM file, this denotes beginning of emulator RAM')
   parser.add_argument('lo_ptr', type=str,
     help='Virtual pointer lo byte')
@@ -140,8 +140,8 @@ def main():
 
   parser.add_argument('-e', '--emu-offset', type=str, default="0x0",
     help='Pointer offset when dereferencing emulator memory')
-  parser.add_argument('-r', '--rom-offset', type=str, default="0x0",
-    help='Use this memory offset to read ROM image, defaults base offset')
+  parser.add_argument('-r', '--data-offset', type=str, default="0x0",
+    help='Use this memory offset to read data segment, defaults base offset')
   parser.add_argument('-j', '--jump-threshold', type=str, default="0x8",
     help='Threshold for detecting forward jumps.')
   parser.add_argument('-l', '--lookup', type=str, default="0x4",
@@ -159,7 +159,7 @@ def main():
 
   # Can't bother with proper argparse type now
   filename = args.filename
-  base_offset = int(args.base_offset, 0)
+  code_offset = int(args.code_offset, 0)
   size = int(args.size, 0)
   lo_ptr = int(args.lo_ptr, 0)
   hi_ptr = int(args.hi_ptr, 0)
@@ -168,13 +168,13 @@ def main():
   lookup = int(args.lookup, 0)
   wrap = int(args.wrap, 0)
   update_mem = bool(args.update_mem)
-  rom_offset = int(args.rom_offset, 0)
-  if rom_offset == 0:
-    rom_offset = base_offset
+  data_offset = int(args.data_offset, 0)
+  if data_offset == 0:
+    data_offset = code_offset
 
   # Print all the metadata
   print('FILE: {}'.format(filename))
-  print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(base_offset, rom_offset, size))
+  print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(code_offset, data_offset, size))
   print('PTR@: {:04x}:{:04x}, OFFSET: {:04x}'.format(lo_ptr, hi_ptr, emu_offset))
   print('═════════╤════════════════')
 
@@ -182,8 +182,8 @@ def main():
   try:
     mainloop(
       filename,
-      base_offset,
-      rom_offset,
+      code_offset,
+      data_offset,
       lo_ptr,
       hi_ptr,
       emu_offset,
