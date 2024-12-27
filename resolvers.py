@@ -1,21 +1,27 @@
 '''Various resolver techniques are to be defined in this file.
 '''
-import pudb
+
 
 class WordResolver:
-  ''' Single pointer value resolver.
-  Probably the simpliest case possible.
-  The pointer is stored as LE word at specified memory location.
+  ''' Single pointer value resolver + dynamic offset.
+  We have static or dynamic track start value and driver optionally stores offset into it.
+  The pointer is stored as LE word at specified memory location and index is a byte.
   '''
 
-  pointer = None
+  base_ptr = None
+  offset_ptr = None
 
-  def __init__(self, pointer):
-    self.pointer = int(pointer, 0)
+  def __init__(self, base_ptr, offset_ptr=None):
+    self.base_ptr = int(base_ptr, 0)
+    self.offset_ptr = int(offset_ptr, 0)
 
   def __call__(self, memory):
-    lo_byte, hi_byte = memory[self.pointer:self.pointer + 2]
-    return int.from_bytes((hi_byte, lo_byte))
+    base = int.from_bytes(memory[self.base_ptr:self.base_ptr + 2], 'little')
+    if self.offset_ptr is not None:
+      offset = int.from_bytes(memory[self.offset_ptr])
+    else:
+      offset = 0
+    return base + offset
 
 
 class HiLoResolver:

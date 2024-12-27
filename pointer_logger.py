@@ -22,9 +22,9 @@ from memory_reader import Memory
 RESOLVER_MAP = {
   'word': (
     WordResolver,
-    'Read single 16-pointer from memory,\n'
-    '  LE is assumed.\n'
-    '    Format: POINTER, e.g. 0x14\n'
+    'Read single 16-pointer from memory and\n'
+    '  optionally offset it by 8-bit index, LE is assumed.\n'
+    '    Format: POINTER[:INDEX], e.g. 0xfc:0xfe\n'
   ),
 
   'hilo': (
