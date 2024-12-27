@@ -33,5 +33,14 @@ class Memory:
     data = self.handle.read(amount)
     return data
 
+  def byte(self, address):
+    return int.from_bytes(self[address])
+
+  def word_le(self, address):
+    return int.from_bytes(self[address:address+2], 'little')
+
+  def word_be(self, address):
+    return int.from_bytes(self[address:address+2], 'big')
+
   def close(self):
     self.handle.close()
