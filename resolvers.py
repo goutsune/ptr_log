@@ -10,17 +10,23 @@ class WordResolver:
 
   base_ptr = None
   offset_ptr = None
+  big_endian = False
 
-  def __init__(self, base_ptr, offset_ptr=None):
+  def __init__(self, base_ptr, flags='', offset_ptr=None):
     self.base_ptr = int(base_ptr, 0)
     self.offset_ptr = int(offset_ptr, 0)
 
+    if 'b' in flags:
+      self.big_endian = True
+
   def __call__(self, memory):
-    base = memory.word_le(self.base_ptr)
-    if self.offset_ptr is not None:
-      offset = memory.byte(self.offset_ptr)
-    else:
-      offset = 0
+
+    if self.big_endian: base = memory.word_be(self.base_ptr)
+    else: base = memory.word_le(self.base_ptr)
+
+    if self.offset_ptr is not None: offset = memory.byte(self.offset_ptr)
+    else: offset = 0
+
     return base + offset
 
 
