@@ -25,8 +25,7 @@ RESOLVER_MAP = {
     'Read single 16-pointer from memory and\n'
     '  optionally offset it by 8-bit index.\n'
     '    Format: POINTER[:FLAGS:INDEX], e.g. 0xfc::0xfe\n'
-    '    Flags: b - pointer is Big Endian\n'
-  ),
+    '    Flags: b - pointer is Big Endian\n'),
 
   'hilo': (
     HiLoResolver,
@@ -41,16 +40,14 @@ RESOLVER_MAP = {
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: w - index is word, W - offset is word, d - index is pointer\n'
-    '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.'
-  ),
+    '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.'),
 
   'order': (
     OrderTableResolver,
     'Get the data pointer from order lookup table, data lookup table, \n'
     '  index in this table and offset inside that data index.\n'
     '  Table is assumed to contain WORD LE pointers.\n'
-    '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:OFFSET_SIZE]\n'
-  ),
+    '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:OFFSET_SIZE]\n'),
 }
 
 # Main processing loop
