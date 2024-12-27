@@ -29,8 +29,8 @@ class WordResolver:
       offset = memory.byte(self.offset_ptr)
       self.info = '{:04X}+{:02X}'.format(base, offset)
     else:
-      self.info = '{:04X}'.format(base)
       offset = 0
+      self.info = '{:04X}'.format(base)
 
     return base + offset
 
