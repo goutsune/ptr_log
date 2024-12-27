@@ -191,7 +191,9 @@ def main():
 
   # Print all the metadata
   print('FILE: {}'.format(filename))
-  print('RAM: {:08x}, ROM: {:08x}, SIZE: {:04x}'.format(code_offset, data_offset, size))
+  print('RAM: {:08x}'.format(code_offset))
+  print('ROM: {:08x}'.format(data_offset))
+  print('SIZE: {:04x}'.format(size))
   print('═════════╤════════════════')
 
   # Start the main loop
