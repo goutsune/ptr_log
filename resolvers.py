@@ -16,9 +16,9 @@ class WordResolver:
     self.offset_ptr = int(offset_ptr, 0)
 
   def __call__(self, memory):
-    base = int.from_bytes(memory[self.base_ptr:self.base_ptr + 2], 'little')
+    base = memory.word_le(self.base_ptr)
     if self.offset_ptr is not None:
-      offset = int.from_bytes(memory[self.offset_ptr])
+      offset = memory.byte(self.offset_ptr)
     else:
       offset = 0
     return base + offset
