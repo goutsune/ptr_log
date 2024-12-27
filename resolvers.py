@@ -143,17 +143,17 @@ class OrderTableResolver:
   def __call__(self, memory):
 
     # Get order index
-    index = int.from_bytes(memory[self.order_index_ptr])
+    index = memory.byte(self.order_index_ptr)
     # Get pattern number in order list
-    order = int.from_bytes(memory[self.order_table_ptr + index])
+    order = memory.byte(self.order_table_ptr + index)
     # Get pattern offset for this number, assume it's LE word in table
     data_ptr_ptr = self.data_table_ptr + order*2
-    data_ptr = int.from_bytes(memory[data_ptr_ptr:data_ptr_ptr+2], 'little')
+    data_ptr = memory.word_le(data_ptr_ptr)
     # Get data offset for this pattern
     if self.data_offset_size == 1:
-      data_offset = int.from_bytes(memory[self.data_offset_ptr])
+      data_offset = memory.byte(self.data_offset_ptr)
     else:
-      data_offset = int.from_bytes(memory[self.data_offset_ptr:self.data_offset_ptr+2], 'little')
+      data_offset = memory.word_le(self.data_offset_ptr)
 
     command_offset = data_ptr + data_offset
 
