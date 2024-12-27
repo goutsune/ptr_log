@@ -11,6 +11,7 @@ class WordResolver:
   base_ptr = None
   offset_ptr = None
   big_endian = False
+  info = ''
 
   def __init__(self, base_ptr, flags='', offset_ptr=None):
     self.base_ptr = int(base_ptr, 0)
@@ -24,8 +25,12 @@ class WordResolver:
     if self.big_endian: base = memory.word_be(self.base_ptr)
     else: base = memory.word_le(self.base_ptr)
 
-    if self.offset_ptr is not None: offset = memory.byte(self.offset_ptr)
-    else: offset = 0
+    if self.offset_ptr is not None:
+      offset = memory.byte(self.offset_ptr)
+      self.info = '{:04X}+{:02X}'.format(base, offset)
+    else:
+      self.info = '{:04X}'.format(base)
+      offset = 0
 
     return base + offset
 
@@ -39,6 +44,7 @@ class HiLoResolver:
 
   high = None
   low = None
+  info = ''
 
   def __init__(self, hi_ptr, lo_ptr):
     self.high = int(hi_ptr, 0)
@@ -49,7 +55,10 @@ class HiLoResolver:
     hi_byte = memory[self.high]
     lo_byte = memory[self.low]
 
-    return int.from_bytes(hi_byte + lo_byte)
+    offset = int.from_bytes(hi_byte + lo_byte)
+    self.info = '{:04X}'.format(offset)
+
+    return offset
 
 
 class TableResolver:
@@ -65,6 +74,7 @@ class TableResolver:
   data_offset_ptr = None
   data_offset_size = None
   data_index_step = None
+  info = ''
 
   # Extra flags for tinkering
   index_is_pointer = False  # Some drivers store data table offset directly, resolve as-is
@@ -103,7 +113,9 @@ class TableResolver:
     if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
     else: data_offset = memory.byte(self.data_offset_ptr)
 
+    self.info = '{:02X},{:04X}:{:02X}'.format(data_index, data_ptr, data_offset)
     command_offset = data_ptr + data_offset
+
     return command_offset
 
 
@@ -118,6 +130,7 @@ class OrderTableResolver:
   order_index_ptr = None
   data_offset_ptr = None
   data_offset_size = None
+  info = ''
 
   def __init__(
     self,
@@ -154,6 +167,7 @@ class OrderTableResolver:
     else:
       data_offset = memory.word_le(self.data_offset_ptr)
 
+    self.info = '{:02X}:{:02X},{:02X}'.format(index, order, data_offset)
     command_offset = data_ptr + data_offset
 
     return command_offset

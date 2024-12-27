@@ -73,8 +73,14 @@ def mainloop(
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
+  print_width = len(resolver.info) + 5  # 5 spaces always reserved for offset display
+  blanks = ' ' * print_width
 
   while True:
+
+    # We want info from previous calculation since we display data post-factum
+    # So, do this now, calling resolver will update printout information.
+    info = resolver.info
     # calculate pointer
     ptr_val = resolver(code) + emu_offset
 
@@ -86,7 +92,7 @@ def mainloop(
     step = ptr_val - old_ptr_val
 
     # Print from whence we read data
-    print('{:04X}{:+5X}│'.format(old_ptr_val, step), end='')
+    print('{}{:+5X}│'.format(info, step), end='')
 
     # Update memory image on jumps
     if update_mem and (step > jump_thr or step < 0):
@@ -98,8 +104,8 @@ def mainloop(
     if step > jump_thr:
       print('►{{{:s}}}'.format(
         data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
-      print('         │▴{{{:s}}}'.format(
-        data_image[ptr_val-lookup:ptr_val].hex(' ')))
+      print('{}│▴{{{:s}}}'.format(
+        blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     # Main print routine
     elif step > 0:
@@ -131,8 +137,8 @@ def mainloop(
       print('◄{{{:s}}}'.format(
         data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
-      print('         │▴{{{:s}}}'.format(
-        data_image[ptr_val-lookup:ptr_val].hex(' ')))
+      print('{}│▴{{{:s}}}'.format(
+        blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
@@ -194,7 +200,7 @@ def main():
   print('RAM: {:08x}'.format(code_offset))
   print('ROM: {:08x}'.format(data_offset))
   print('SIZE: {:04x}'.format(size))
-  print('═════════╤════════════════')
+  print('══════════════════════════')
 
   # Start the main loop
   try:
