@@ -76,7 +76,7 @@ def mainloop(
 
   while True:
     # calculate pointer
-    ptr_val = resolver(code)
+    ptr_val = resolver(code) + emu_offset
 
     # Skip nops
     if old_ptr_val == ptr_val:
@@ -97,14 +97,14 @@ def mainloop(
     # On forward jump display data after old pointer and before new pointer for inspection
     if step > jump_thr:
       print('►{{{:s}}}'.format(
-        data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+        data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
       print('         │▴{{{:s}}}'.format(
-        data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
+        data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     # Main print routine
     elif step > 0:
-      from_o = old_ptr_val + emu_offset
-      to_ofc = old_ptr_val + emu_offset + step
+      from_o = old_ptr_val
+      to_ofc = old_ptr_val + step
       tokens = data_image[from_o:to_ofc]
 
       old_pos = 0
@@ -118,21 +118,21 @@ def mainloop(
 
       # This will print values around old pointer
       #print('             _ {:s}|{:s}'.format(
-      #  data_image[old_ptr_val+emu_offset-lookup:old_ptr_val+emu_offset].hex(' '),
-      #  data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+      #  data_image[old_ptr_val-lookup:old_ptr_val].hex(' '),
+      #  data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
       # This will print values around new pointer
       #print('             _ {:s}|{:s}'.format(
-      #  data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' '),
-      #  data_image[ptr_val+emu_offset:ptr_val+emu_offset+lookup].hex(' ')))
+      #  data_image[ptr_val-lookup:ptr_val].hex(' '),
+      #  data_image[ptr_val:ptr_val+lookup].hex(' ')))
 
     # We jumped backward, display what's behind old pointer and before new pointer
     else:
       print('◄{{{:s}}}'.format(
-        data_image[old_ptr_val+emu_offset:old_ptr_val+emu_offset+lookup].hex(' ')))
+        data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
       print('         │▴{{{:s}}}'.format(
-        data_image[ptr_val+emu_offset-lookup:ptr_val+emu_offset].hex(' ')))
+        data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
