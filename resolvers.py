@@ -52,7 +52,6 @@ class HiLoResolver:
     return int.from_bytes(hi_byte + lo_byte)
 
 
-# TODO: Rewrite this crap after some sleep, only order resolver is working now
 class TableResolver:
   ''' Table[Index] + Offset resolver.
   This seems to be a common case in C64 music scene. The driver does not store
@@ -108,7 +107,7 @@ class TableResolver:
     return command_offset
 
 
-# TODO: Generalize implementation over TableResolver
+# TODO: Generalize implementation over TableResolver?
 class OrderTableResolver:
   ''' Table[Orders[OrderIndex]] + Offset resolver.
   A more convoluted example, where order is also an offset to order table
