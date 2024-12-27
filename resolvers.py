@@ -61,25 +61,25 @@ class TableResolver:
   data_offset_size = None
   data_index_step = None
 
+  # Extra flags for tinkering
+  index_is_pointer = False  # Some drivers store data table offset directly, resolve as-is
+  index_is_word = False  # in case your index is 16 bit wide
+  offset_is_word = False  # in case your offset is 16 bit wide
+
   def __init__(
     self,
     data_table_ptr,
     data_index_ptr,
     data_offset_ptr,
-    data_index_step='1',
-    data_offset_size='b'):
+    flags=''):
 
     self.data_table_ptr = int(data_table_ptr, 0)
     self.data_index_ptr = int(data_index_ptr, 0)
-    self.data_index_step = int(data_index_step, 0)
     self.data_offset_ptr = int(data_offset_ptr, 0)
 
-    if data_offset_size == 'b':
-      self.data_offset_size = 1
-    elif data_offset_size == 'w':
-      self.data_offset_size = 2
-    else:
-      raise ValueError('Expected either "b" or "w" argument for offset pointer')
+    if 'w' in flags: self.index_is_word = True
+    if 'W' in flags: self.offset_is_word = True
+    if 'd' in flags: self.index_is_pointer = True
 
   def __call__(self, memory):
 
