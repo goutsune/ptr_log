@@ -83,19 +83,22 @@ class TableResolver:
 
   def __call__(self, memory):
 
-    # Get data index, assume it's 1 byte, support stepping for interleaved data
-    index = int.from_bytes(memory[self.data_index_ptr]) * self.data_index_step
+    # Get data index
+    if self.index_is_word: data_index = memory.word_le(self.data_index_ptr)
+    else: data_index = memory.byte(self.data_index_ptr)
 
-    # Get table offset, assume it's LE word
-    table_ptr = self.data_table_ptr + index * 2
-    table_offset = int.from_bytes(memory[self.data_offset_ptr:self.data_offset_ptr+2], 'little')
+    # Get data pointer
+    if self.index_is_pointer: data_ptr_ptr = self.data_table_ptr + data_index
 
-    # Get table data offset, assume it's 1 byte as well
-    data_offset = int.from_bytes(memory[self.data_offset_ptr])
+    # In this mode we assume it's index to word array
+    else: data_ptr_ptr = self.data_table_ptr + data_index*2
+    data_ptr = memory.word_le(data_ptr_ptr)
 
-    # Get our data pointer from data table and offset.
-    command_offset = table_offset + data_offset
+    # Get data offset
+    if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
+    else: data_offset = memory.byte(self.data_offset_ptr)
 
+    command_offset = data_ptr + data_offset
     return command_offset
 
 
