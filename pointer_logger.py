@@ -131,7 +131,7 @@ def mainloop(
       old_pos = 0
       for pos in range(0, len(tokens), wrap):
         if pos:  # For consecutive lines
-          print('f{blanks}│', end='')
+          print(f'{blanks}│', end='')
         print('∙ {:s}'.format(tokens[pos:wrap+pos].hex(' ')))
         old_pos = pos
 
