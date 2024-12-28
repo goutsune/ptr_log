@@ -39,7 +39,8 @@ RESOLVER_MAP = {
     '  index in this table and offset inside that data index.\n'
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:FLAGS]\n'
-    '    Flags: w - index is word, W - offset is word, d - index is pointer\n'
+    '    Flags: w - Index is word, W - Offset is word, d - Index is pointer\n'
+    '           o - Print final offset'
     '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.'),
 
   'order': (
@@ -47,7 +48,8 @@ RESOLVER_MAP = {
     'Get the data pointer from order lookup table, data lookup table, \n'
     '  index in this table and offset inside that data index.\n'
     '  Table is assumed to contain WORD LE pointers.\n'
-    '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:OFFSET_SIZE]\n'),
+    '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]\n'
+    '    Flags: W - Offset is word, o - Print final offset in info\n'),
 }
 
 # Main processing loop
