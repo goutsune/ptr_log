@@ -78,8 +78,9 @@ class TableResolver:
 
   # Extra flags for tinkering
   index_is_pointer = False  # Some drivers store data table offset directly, resolve as-is
-  index_is_word = False  # in case your index is 16 bit wide
+  index_is_word = False   # in case your index is 16 bit wide
   offset_is_word = False  # in case your offset is 16 bit wide
+  print_offset = False    # Display resulting addres for track data
 
   def __init__(
     self,
@@ -95,6 +96,7 @@ class TableResolver:
     if 'w' in flags: self.index_is_word = True
     if 'W' in flags: self.offset_is_word = True
     if 'd' in flags: self.index_is_pointer = True
+    if 'o' in flags: self.print_offset = True
 
   def __call__(self, memory):
 
@@ -113,8 +115,12 @@ class TableResolver:
     if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
     else: data_offset = memory.byte(self.data_offset_ptr)
 
-    self.info = '{:02X},{:04X}:{:02X}'.format(data_index, data_ptr, data_offset)
     command_offset = data_ptr + data_offset
+
+    if self.print_offset:
+      self.info = '{:02X},{:04X}+{:02X}'.format(data_index, data_ptr, data_offset)
+    else:
+      self.info = '{:02X},{:02X}:{:04X}'.format(data_index, data_offset, command_offset)
 
     return command_offset
 
@@ -129,8 +135,10 @@ class OrderTableResolver:
   data_table_ptr = None
   order_index_ptr = None
   data_offset_ptr = None
-  data_offset_size = None
   info = ''
+
+  offset_is_word = False  # in case your offset is 16 bit wide
+  print_offset = False    # Display resulting addres for track data
 
   def __init__(
     self,
@@ -138,19 +146,15 @@ class OrderTableResolver:
     data_table_ptr,
     order_index_ptr,
     data_offset_ptr,
-    data_offset_size='b'):
+    flags=''):
 
     self.order_table_ptr = int(order_table_ptr, 0)
     self.data_table_ptr = int(data_table_ptr, 0)
     self.order_index_ptr = int(order_index_ptr, 0)
     self.data_offset_ptr = int(data_offset_ptr, 0)
 
-    if data_offset_size == 'b':
-      self.data_offset_size = 1
-    elif data_offset_size == 'w':
-      self.data_offset_size = 2
-    else:
-      raise ValueError('Expected either "b" or "w" argument for offset pointer')
+    if 'o' in flags: self.print_offset = True
+    if 'W' in flags: self.offset_is_word = True
 
   def __call__(self, memory):
 
@@ -161,13 +165,15 @@ class OrderTableResolver:
     # Get pattern offset for this number, assume it's LE word in table
     data_ptr_ptr = self.data_table_ptr + order*2
     data_ptr = memory.word_le(data_ptr_ptr)
-    # Get data offset for this pattern
-    if self.data_offset_size == 1:
-      data_offset = memory.byte(self.data_offset_ptr)
-    else:
-      data_offset = memory.word_le(self.data_offset_ptr)
 
-    self.info = '{:02X}:{:02X},{:02X}'.format(index, order, data_offset)
+    # Get data offset for this pattern
+    if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
+    else: data_offset = memory.byte(self.data_offset_ptr)
+
     command_offset = data_ptr + data_offset
+    if self.print_offset:
+      self.info = '{:02X}:{:02X},{:02X}:{:04X}'.format(index, order, data_offset, command_offset)
+    else:
+      self.info = '{:02X}:{:02X},{:02X}'.format(index, order, data_offset)
 
     return command_offset
