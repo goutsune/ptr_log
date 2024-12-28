@@ -34,6 +34,8 @@
 -M order 0x18cd:0x183a:0x16ac:0x16ad -w 10 -f 50
 
 # 4-Mat - Mystery Chords
-0xc081 - offset
-0xc02a - ticks left
-0xc08d - index/offset to pattern table
+# 38 patterns in table, hence the step of 37.
+-M table 0xc9bf:0xc08d:0xc081:37 -E ff
+-M table 0xc9bf:0xc08e:0xc082:37 -E ff
+-M table 0xc9bf:0xc08f:0xc083:37 -E ff
+
