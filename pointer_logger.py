@@ -60,6 +60,7 @@ def mainloop(
   size,
   jump_thr,
   lookup,
+  track_end_seq,
   wrap,
   update_mem,
   frequency):
@@ -90,6 +91,7 @@ def mainloop(
       continue
 
     step = ptr_val - old_ptr_val
+    seq_end_found = False
 
     # Print from whence we read data
     print('{}{:+5X}│'.format(info, step), end='')
@@ -100,12 +102,25 @@ def mainloop(
       if data_image is None or len(data_image) < size:
         print('! READ FAIL')
 
+    # On detected jump, let's see if track end sequence is within lookup area
+    if track_end_seq and (step < 0 or step > jump_thr):
+      tokens = data_image[old_ptr_val:old_ptr_val+lookup]
+      if (pos := tokens.find(track_end_seq)) >= 0:
+        eot_tokens = tokens[0:pos+1]
+        seq_end_found = True
+
     # On forward jump display data after old pointer and before new pointer for inspection
     if step > jump_thr:
-      print('►{{{:s}}}'.format(
-        data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
-      print('{}│▴{{{:s}}}'.format(
-        blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
+
+      if seq_end_found:
+        print('► {:s}~'.format(
+          eot_tokens.hex(' ')))
+      else:
+        print('►{{{:s}}}'.format(
+          data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
+
+        print('{}│▴{{{:s}}}'.format(
+          blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     # Main print routine
     elif step > 0:
@@ -134,11 +149,17 @@ def mainloop(
 
     # We jumped backward, display what's behind old pointer and before new pointer
     else:
-      print('◄{{{:s}}}'.format(
-        data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
+      if seq_end_found:
+        print('◄ {:s}~'.format(
+          eot_tokens.hex(' ')))
+      else:
+        print('◄{{{:s}}}'.format(
+          data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
-      print('{}│▴{{{:s}}}'.format(
-        blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
+        # Do not print data before 0 pointer, our track just got reset or disabled
+        if ptr_val != 0:
+          print('{}│▴{{{:s}}}'.format(
+            blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
@@ -168,6 +189,8 @@ def main():
     help='Threshold for detecting forward jumps.')
   parser.add_argument('-l', '--lookup', type=str, default="0x4",
     help='Explore this many bytes when jump is detected')
+  parser.add_argument('-E', '--track-end-seq', type=str, default="",
+    help='Look for these bytes in lookup buffer to find tack end.')
   parser.add_argument('-w', '--wrap', type=str, default="0x40",
     help='Wrap hex output after this many bytes')
   parser.add_argument('-u', '--update-mem', type=int, default=0,
@@ -189,6 +212,7 @@ def main():
   emu_offset = int(args.emu_offset, 0)
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
+  track_end_seq = bytes.fromhex(args.track_end_seq.replace(',',' '))
   wrap = int(args.wrap, 0)
   update_mem = bool(args.update_mem)
   data_offset = int(args.data_offset, 0)
@@ -213,6 +237,7 @@ def main():
       size,
       jump_thr=jump_threshold,
       lookup=lookup,
+      track_end_seq=track_end_seq,
       wrap=wrap,
       update_mem=update_mem,
       frequency=args.frequency)
