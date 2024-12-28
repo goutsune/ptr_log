@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 '''This little utility will repeatedly read an emulated-system specific pointer defined by 2 bytes and print
 how did this pointer value change. This will give you an idea how the data is consumed by an unknown software.
 
