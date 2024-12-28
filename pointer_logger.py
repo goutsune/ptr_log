@@ -58,11 +58,11 @@ def mainloop(
   resolver,
   emu_offset,
   size,
-  jump_thr=0x20,
-  lookup=0x4,
-  wrap=0x40,
-  update_mem=False,
-  frequency=120):
+  jump_thr,
+  lookup,
+  wrap,
+  update_mem,
+  frequency):
 
   code = Memory(filename, code_offset)  # Code block, read every time when resolving pointers
   data = Memory(filename, data_offset)  # Data block, static by default, defaults to code block
