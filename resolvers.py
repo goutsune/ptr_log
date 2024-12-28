@@ -73,7 +73,7 @@ class TableResolver:
   data_index_ptr = None
   data_offset_ptr = None
   data_offset_size = None
-  data_index_step = None
+  data_index_step = None  # Useful when our offset table is vertical, causing lo and hi bytes to apart
   info = ''
 
   # Extra flags for tinkering
@@ -87,11 +87,14 @@ class TableResolver:
     data_table_ptr,
     data_index_ptr,
     data_offset_ptr,
+    data_index_step=0,
     flags=''):
 
     self.data_table_ptr = int(data_table_ptr, 0)
     self.data_index_ptr = int(data_index_ptr, 0)
     self.data_offset_ptr = int(data_offset_ptr, 0)
+    if data_index_step:  # Branch on empty string
+      self.data_index_step = int(data_index_step, 0)
 
     if 'w' in flags: self.index_is_word = True
     if 'W' in flags: self.offset_is_word = True
@@ -104,12 +107,26 @@ class TableResolver:
     if self.index_is_word: data_index = memory.word_le(self.data_index_ptr)
     else: data_index = memory.byte(self.data_index_ptr)
 
-    # Get data pointer
-    if self.index_is_pointer: data_ptr_ptr = self.data_table_ptr + data_index
+    # In case our index points into "vertical" table of known size, we want to get lo and hi bytes separately.
+    if self.data_index_step:
 
-    # In this mode we assume it's index to word array
-    else: data_ptr_ptr = self.data_table_ptr + data_index*2
-    data_ptr = memory.word_le(data_ptr_ptr)
+      # High byte is normal
+      ptr_hi = memory[self.data_table_ptr + data_index]
+      # Low byte offset by table length
+      ptr_lo = memory[self.data_table_ptr + self.data_index_step + data_index]
+
+      data_ptr = int.from_bytes(ptr_hi + ptr_lo)
+
+    # Otherwise proceed normally,
+    else:
+      # Get data pointer
+      if self.index_is_pointer: data_ptr_ptr = self.data_table_ptr + data_index
+
+      # In this mode we assume it's index to word array
+      else: data_ptr_ptr = self.data_table_ptr + data_index*2
+
+      # Get table offset
+      data_ptr = memory.word_le(data_ptr_ptr)
 
     # Get data offset
     if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
@@ -118,9 +135,9 @@ class TableResolver:
     command_offset = data_ptr + data_offset
 
     if self.print_offset:
-      self.info = '{:02X},{:04X}+{:02X}'.format(data_index, data_ptr, data_offset)
-    else:
       self.info = '{:02X},{:02X}:{:04X}'.format(data_index, data_offset, command_offset)
+    else:
+      self.info = '{:02X},{:04X}+{:02X}'.format(data_index, data_ptr, data_offset)
 
     return command_offset
 
