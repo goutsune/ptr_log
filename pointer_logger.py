@@ -94,38 +94,39 @@ def mainloop(
 
     step = ptr_val - old_ptr_val
     seq_end_found = False
+    jump_detected = step > jump_thr or step < 0
+    jump_directon = '►' if step > 0 else '◄'
 
     # Print from whence we read data
     print('{}{:+5X}│'.format(info, step), end='')
 
-    # Update memory image on jumps
-    if update_mem and (step > jump_thr or step < 0):
-      data_image = data[0:size]
-      if data_image is None or len(data_image) < size:
-        print('! READ FAIL')
+    if jump_detected:
+      # Update memory image on jumps
+      if update_mem:
+        data_image = data[0:size]
+        if data_image is None or len(data_image) < size:
+          print('! READ FAIL')
 
-    # On detected jump, let's see if track end sequence is within lookup area
-    if track_end_seq and (step < 0 or step > jump_thr):
-      tokens = data_image[old_ptr_val:old_ptr_val+lookup]
-      if (pos := tokens.find(track_end_seq)) >= 0:
-        eot_tokens = tokens[0:pos+1]
-        seq_end_found = True
+      # On detected jump, let's see if track end sequence is within lookup area
+      if track_end_seq:
+        tokens = data_image[old_ptr_val:old_ptr_val+lookup]
+        if (pos := tokens.find(track_end_seq)) >= 0:
+          eot_tokens = tokens[0:pos+1]
+          seq_end_found = True
 
     # On forward jump display data after old pointer and before new pointer for inspection
-    if step > jump_thr:
+    if jump_detected:
 
       if seq_end_found:
-        print('► {:s}~'.format(
-          eot_tokens.hex(' ')))
+        print('{} {:s}~'.format(
+          jump_directon, eot_tokens.hex(' ')))
       else:
-        print('►{{{:s}}}'.format(
-          data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
+        print('{}{{{:s}}}'.format(
+          jump_directon, data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
-        print('{}│▴{{{:s}}}'.format(
-          blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     # Main print routine
-    elif step > 0:
+    else:
       from_o = old_ptr_val
       to_ofc = old_ptr_val + step
       tokens = data_image[from_o:to_ofc]
@@ -134,34 +135,8 @@ def mainloop(
       for pos in range(0, len(tokens), wrap):
         if pos:  # For consecutive lines
           print(f'{blanks}│', end='')
-        print('∙ {:s}'.format(tokens[pos:wrap+pos].hex(' ')))
+        print('• {:s}'.format(tokens[pos:wrap+pos].hex(' ')))
         old_pos = pos
-
-      # Extra debug output.
-
-      # This will print values around old pointer
-      #print('             _ {:s}|{:s}'.format(
-      #  data_image[old_ptr_val-lookup:old_ptr_val].hex(' '),
-      #  data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
-
-      # This will print values around new pointer
-      #print('             _ {:s}|{:s}'.format(
-      #  data_image[ptr_val-lookup:ptr_val].hex(' '),
-      #  data_image[ptr_val:ptr_val+lookup].hex(' ')))
-
-    # We jumped backward, display what's behind old pointer and before new pointer
-    else:
-      if seq_end_found:
-        print('◄ {:s}~'.format(
-          eot_tokens.hex(' ')))
-      else:
-        print('◄{{{:s}}}'.format(
-          data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
-
-        # Do not print data before 0 pointer, our track just got reset or disabled
-        if ptr_val != 0:
-          print('{}│▴{{{:s}}}'.format(
-            blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     old_ptr_val = ptr_val
     old_step = step
