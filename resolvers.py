@@ -15,7 +15,10 @@ class WordResolver:
 
   def __init__(self, base_ptr, flags='', offset_ptr=None):
     self.base_ptr = int(base_ptr, 0)
-    self.offset_ptr = int(offset_ptr, 0)
+    try:
+      self.offset_ptr = int(offset_ptr, 0)
+    except TypeError:
+      pass
 
     if 'b' in flags:
       self.big_endian = True
