@@ -63,6 +63,7 @@ def mainloop(
   jump_thr,
   lookup,
   track_end_seq,
+  look_behind,
   wrap,
   update_mem,
   frequency):
@@ -124,6 +125,11 @@ def mainloop(
         print('{}{{{:s}}}'.format(
           jump_directon, data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
 
+      if look_behind:
+        # Do not print data before 0 pointer, our track just got reset or disabled
+        if ptr_val != 0:
+          print('{}│▲{{{:s}}}'.format(
+            blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
 
     # Main print routine
     else:
@@ -168,6 +174,8 @@ def main():
     help='Explore this many bytes when jump is detected')
   parser.add_argument('-E', '--track-end-seq', type=str, default="",
     help='Look for these bytes in lookup buffer to find tack end.')
+  parser.add_argument('-b', '--look-behind', type=str, default="",
+    help='Print values before new pointer after jump')
   parser.add_argument('-w', '--wrap', type=str, default="0x40",
     help='Wrap hex output after this many bytes')
   parser.add_argument('-u', '--update-mem', type=int, default=0,
@@ -190,6 +198,7 @@ def main():
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
   track_end_seq = bytes.fromhex(args.track_end_seq.replace(',',' '))
+  look_behind = bool(args.look_behind)
   wrap = int(args.wrap, 0)
   update_mem = bool(args.update_mem)
   data_offset = int(args.data_offset, 0)
@@ -215,6 +224,7 @@ def main():
       jump_thr=jump_threshold,
       lookup=lookup,
       track_end_seq=track_end_seq,
+      look_behind=look_behind,
       wrap=wrap,
       update_mem=update_mem,
       frequency=args.frequency)
