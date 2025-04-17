@@ -66,21 +66,36 @@ class HiLoResolver:
 
   high = None
   low = None
+  offset_ptr = None
   info = ''
 
-  def __init__(self, hi_ptr, lo_ptr):
+  def __init__(self, hi_ptr, lo_ptr, offset_ptr=None):
     self.high = int(hi_ptr, 0)
     self.low = int(lo_ptr, 0)
+    try:
+      self.offset_ptr = int(offset_ptr, 0)
+    except TypeError:
+      pass
 
   def __call__(self, memory):
 
-    hi_byte = memory[self.high]
-    lo_byte = memory[self.low]
+    hi_addr = memory.byte(self.high) * 0x100
+    lo_addr = memory.byte(self.low)
 
-    offset = int.from_bytes(hi_byte + lo_byte)
-    self.info = '{:04X}'.format(offset)
+    if self.offset_ptr is not None:
+      offset = memory.byte(self.offset_ptr)
+    else:
+      offset = 0
 
-    return offset
+    if lo_addr > offset:
+      final_lo_addr = lo_addr + offset
+    else:
+      final_lo_addr = offset - lo_addr
+
+    address = hi_addr + final_lo_addr
+    self.info = '{:04X}'.format(address)
+
+    return address
 
 
 class TableResolver:
