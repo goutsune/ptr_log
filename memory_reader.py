@@ -2,7 +2,7 @@
 /proc/PID/mem files do not support mmap, hence manual simulator for this behavior.
 '''
 
-import os, sys, io
+import os
 
 class Memory:
   base = None

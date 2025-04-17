@@ -14,6 +14,7 @@ TODO:
 '''
 
 import argparse
+import time
 from time import sleep
 
 from resolvers import HiLoResolver, WordResolver, DwordResolver, TableResolver, OrderTableResolver
@@ -87,6 +88,9 @@ def mainloop(
   print_width = len(resolver.info) + 5  # 5 spaces always reserved for offset display
   blanks = ' ' * print_width
 
+  period = 1 / frequency
+  next_time = time.perf_counter()
+
   while True:
 
     # We want info from previous calculation since we display data post-factum
@@ -96,8 +100,9 @@ def mainloop(
     ptr_val = resolver(code) + emu_offset
 
     # Skip nops
+    next_time += period
     if old_ptr_val == ptr_val:
-      sleep(1/frequency)
+      while time.perf_counter() < next_time: sleep(0)
       continue
 
     step = ptr_val - old_ptr_val
