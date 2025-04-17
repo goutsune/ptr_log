@@ -42,5 +42,11 @@ class Memory:
   def word_be(self, address):
     return int.from_bytes(self[address:address+2], 'big')
 
+  def dword_le(self, address):
+    return int.from_bytes(self[address:address+4], 'little')
+
+  def dword_be(self, address):
+    return int.from_bytes(self[address:address+4], 'big')
+
   def close(self):
     self.handle.close()

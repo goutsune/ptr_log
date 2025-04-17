@@ -16,13 +16,20 @@ TODO:
 import argparse
 from time import sleep
 
-from resolvers import HiLoResolver, WordResolver, TableResolver, OrderTableResolver
+from resolvers import HiLoResolver, WordResolver, DwordResolver, TableResolver, OrderTableResolver
 from memory_reader import Memory
 
 RESOLVER_MAP = {
   'word': (
     WordResolver,
     'Read single 16-pointer from memory and\n'
+    '  optionally offset it by 8-bit index.\n'
+    '    Format: POINTER[:FLAGS:INDEX], e.g. 0xfc::0xfe\n'
+    '    Flags: b - pointer is Big Endian\n'),
+
+  'dword': (
+    DwordResolver,
+    'Read single 32-pointer from memory and\n'
     '  optionally offset it by 8-bit index.\n'
     '    Format: POINTER[:FLAGS:INDEX], e.g. 0xfc::0xfe\n'
     '    Flags: b - pointer is Big Endian\n'),

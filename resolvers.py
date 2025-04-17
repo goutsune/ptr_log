@@ -38,6 +38,25 @@ class WordResolver:
     return base + offset
 
 
+class DwordResolver(WordResolver):
+  '''Same as word resolver, but we have 32 bits to deal with.
+  '''
+
+  def __call__(self, memory):
+
+    if self.big_endian: base = memory.dword_be(self.base_ptr)
+    else: base = memory.dword_le(self.base_ptr)
+
+    if self.offset_ptr is not None:
+      offset = memory.byte(self.offset_ptr)
+      self.info = '{:08X}+{:02X}'.format(base, offset)
+    else:
+      offset = 0
+      self.info = '{:08X}'.format(base)
+
+    return base + offset
+
+
 class HiLoResolver:
   ''' Lo + Hi byte pointer resolver.
   A very common case, we have non-linear memory location for 16-bit pointer.
