@@ -60,6 +60,15 @@ RESOLVER_MAP = {
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
 }
 
+GRAY  = "\033[90m"
+BGRAY = "\033[37m"
+RED   = "\033[31m"
+GOLD  = "\033[33m"
+BRED  = "\033[91m"
+BLUE  = "\033[34m"
+BBLUE = "\033[94m"
+RESET = "\033[0m"
+
 # Main processing loop
 def mainloop(
   filename,
@@ -108,10 +117,11 @@ def mainloop(
     step = ptr_val - old_ptr_val
     seq_end_found = False
     jump_detected = step > jump_thr or step < 0
-    jump_directon = '►' if step > 0 else '◄'
+    jump_directon = True if step > 0 else False
+    jump_char = '►' if step > 0 else '◄'
 
     # Print from whence we read data
-    print('{}{:+5X}│'.format(info, step), end='')
+    print(f'{GOLD}{info}{GRAY}{step:+5X}{RESET}│', end='')
 
     if jump_detected:
       # Update memory image on jumps
@@ -131,17 +141,27 @@ def mainloop(
     if jump_detected:
 
       if seq_end_found:
-        print('{} {:s}~'.format(
-          jump_directon, eot_tokens.hex(' ')))
+        print('{}{} {:s}~{}'.format(
+          jump_char,
+          RED if jump_directon else BLUE,
+          eot_tokens.hex(' '),
+          RESET))
       else:
-        print('{}{{{:s}}}'.format(
-          jump_directon, data_image[old_ptr_val:old_ptr_val+lookup].hex(' ')))
+        print('{}{} {:s}{}'.format(
+          jump_char,
+          RED if jump_directon else BLUE,
+          data_image[old_ptr_val:old_ptr_val+lookup].hex(' '),
+          RESET))
 
       if look_behind:
         # Do not print data before 0 pointer, our track just got reset or disabled
         if ptr_val != 0:
-          print('{}│▲{{{:s}}}'.format(
-            blanks, data_image[ptr_val-lookup:ptr_val].hex(' ')))
+          print('{}│▲{} {:s}{}'.format(
+            blanks,
+            GOLD,
+            data_image[ptr_val-lookup:ptr_val].hex(' '),
+            RESET))
+
 
     # Main print routine
     else:
