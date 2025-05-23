@@ -186,12 +186,12 @@ def main():
     help='Explore this many bytes when jump is detected')
   parser.add_argument('-E', '--track-end-seq', type=str, default="",
     help='Look for these bytes in lookup buffer to find tack end.')
-  parser.add_argument('-b', '--look-behind', type=str, default="",
+  parser.add_argument('-b', '--look-behind', action='store_true',
     help='Print values before new pointer after jump')
   parser.add_argument('-w', '--wrap', type=str, default="0x40",
     help='Wrap hex output after this many bytes')
-  parser.add_argument('-u', '--update-mem', type=int, default=0,
-    help='Refresh memory image on every jump [0/1]')
+  parser.add_argument('-u', '--update-mem', action='store_true',
+    help='Refresh memory image on every jump')
   parser.add_argument('-f', '--frequency', type=int, default=120,
     help='Pointer test frequency in Hz. Defaults to 120')
   parser.add_argument('-s', '--size', type=str, default="0x10000",
@@ -210,9 +210,9 @@ def main():
   jump_threshold = int(args.jump_threshold, 0)
   lookup = int(args.lookup, 0)
   track_end_seq = bytes.fromhex(args.track_end_seq.replace(',',' '))
-  look_behind = bool(args.look_behind)
+  look_behind = args.look_behind
   wrap = int(args.wrap, 0)
-  update_mem = bool(args.update_mem)
+  update_mem = args.update_mem
   data_offset = int(args.data_offset, 0)
   if data_offset == 0:
     data_offset = code_offset
