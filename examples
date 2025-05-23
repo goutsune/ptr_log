@@ -39,3 +39,17 @@
 -M table 0xc9bf:0xc08e:0xc082:37 -E ff
 -M table 0xc9bf:0xc08f:0xc083:37 -E ff
 
+# NSFPlay has separate memory location for mapped RAM+ROM area, recommended if
+# tracks uses bankswitching
+
+# Lagrange Point                  v- RAM allocation as observed in メモリ     Mapped ROM -v
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x704c:0x7042 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x704d:0x7043 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x704e:0x7044 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x704f:0x7045 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7050:0x7046 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7051:0x7047 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7052:0x7048 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7053:0x7049 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7054:0x704a -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+/proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7055:0x704b -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
