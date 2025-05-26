@@ -100,6 +100,12 @@ def mainloop(
   period = 1 / frequency
   next_time = time.perf_counter()
 
+  ## For profiling
+  # count = 0
+  # duration = 1.0  # seconds
+  # start = time.perf_counter()
+  # end = start + duration
+
   while True:
 
     # We want info from previous calculation since we display data post-factum
@@ -107,6 +113,13 @@ def mainloop(
     info = resolver.info
     # calculate pointer
     ptr_val = resolver(code) + emu_offset
+
+    ## For profiling
+    # count += 1
+    # if time.perf_counter() > end:
+      # elapsed = time.perf_counter() - start
+      # print(f"{count / elapsed:.2f} iterations per second")
+      # break
 
     # Skip nops
     next_time += period
@@ -153,6 +166,7 @@ def mainloop(
           data_image[old_ptr_val:old_ptr_val+lookup].hex(' '),
           RESET))
 
+      # This prints data before NEW pointer location, thus showing some extra information before loop point
       if look_behind:
         # Do not print data before 0 pointer, our track just got reset or disabled
         if ptr_val != 0:
