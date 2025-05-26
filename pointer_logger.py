@@ -16,8 +16,11 @@ TODO:
 import argparse
 import time
 from time import sleep
+from shutil import get_terminal_size
 
 from resolvers import HiLoResolver, WordResolver, DwordResolver, TableResolver, OrderTableResolver
+from printers import HexPrinter
+from printers import FWRD, BKWD, FJMP, BJMP, REST, PREV, LKUP  # Our lookup states
 from memory_reader import Memory
 
 RESOLVER_MAP = {
@@ -87,40 +90,35 @@ def mainloop(
 
   code = Memory(filename, code_offset)  # Code block, read every time when resolving pointers
   data = Memory(filename, data_offset)  # Data block, static by default, defaults to code block
+  printer = HexPrinter(wrap, end_pattern=track_end_seq)
 
   # Setup global state
   data_image = data[0:size]
-  old_ptr_val = resolver(code)
+  old_ptr_val = resolver(code) + emu_offset
   ptr_val = old_ptr_val
   step = 0
   old_step = 0
-  print_width = len(resolver.info) + 5  # 5 spaces always reserved for offset display
+  old_info = resolver.info
+  info = resolver.info
+  print_width = len(old_info) + 5  # 5 spaces always reserved for offset display
   blanks = ' ' * print_width
 
   period = 1 / frequency
   next_time = time.perf_counter()
 
-  ## For profiling
-  # count = 0
-  # duration = 1.0  # seconds
-  # start = time.perf_counter()
-  # end = start + duration
+
+  # Print preview line from the current location
+  printer(PREV, data_image[ptr_val:ptr_val+lookup])
+  print(f'{GRAY}{info}   **{RESET}│{printer.prefix}{printer.result[0]}{printer.suffix}', end='')
 
   while True:
 
     # We want info from previous calculation since we display data post-factum
     # So, do this now, calling resolver will update printout information.
-    info = resolver.info
-    # calculate pointer
+    old_info = resolver.info
+    # Calculate pointer
     ptr_val = resolver(code) + emu_offset
-
-    ## For profiling
-    # count += 1
-    # if time.perf_counter() > end:
-      # elapsed = time.perf_counter() - start
-      # print(f"{count / elapsed:.2f} iterations per second")
-      # break
-
+    info = resolver.info
     # Skip nops
     next_time += period
     if old_ptr_val == ptr_val:
@@ -130,65 +128,43 @@ def mainloop(
     step = ptr_val - old_ptr_val
     seq_end_found = False
     jump_detected = step > jump_thr or step < 0
-    jump_directon = True if step > 0 else False
+    jump_directon = FJMP if step > 0 else BJMP
     jump_char = '►' if step > 0 else '◄'
-
-    # Print from whence we read data
-    print(f'{GOLD}{info}{GRAY}{step:+5X}{RESET}│', end='')
 
     if jump_detected:
       # Update memory image on jumps
       if update_mem:
         data_image = data[0:size]
         if data_image is None or len(data_image) < size:
-          print('! READ FAIL')
-
-      # On detected jump, let's see if track end sequence is within lookup area
-      if track_end_seq:
-        tokens = data_image[old_ptr_val:old_ptr_val+lookup]
-        if (pos := tokens.find(track_end_seq)) >= 0:
-          eot_tokens = tokens[0:pos+1]
-          seq_end_found = True
+          exit(1)  # Exit on read failure
 
     # On forward jump display data after old pointer and before new pointer for inspection
     if jump_detected:
-
-      if seq_end_found:
-        print('{}{} {:s}~{}'.format(
-          jump_char,
-          RED if jump_directon else BLUE,
-          eot_tokens.hex(' '),
-          RESET))
-      else:
-        print('{}{} {:s}{}'.format(
-          jump_char,
-          RED if jump_directon else BLUE,
-          data_image[old_ptr_val:old_ptr_val+lookup].hex(' '),
-          RESET))
-
-      # This prints data before NEW pointer location, thus showing some extra information before loop point
-      if look_behind:
-        # Do not print data before 0 pointer, our track just got reset or disabled
-        if ptr_val != 0:
-          print('{}│▲{} {:s}{}'.format(
-            blanks,
-            GOLD,
-            data_image[ptr_val-lookup:ptr_val].hex(' '),
-            RESET))
-
+      printer(jump_directon, data_image[old_ptr_val:old_ptr_val+lookup])
 
     # Main print routine
     else:
-      from_o = old_ptr_val
-      to_ofc = old_ptr_val + step
-      tokens = data_image[from_o:to_ofc]
+      printer(FWRD, data_image[old_ptr_val:old_ptr_val+step])
 
-      old_pos = 0
-      for pos in range(0, len(tokens), wrap):
-        if pos:  # For consecutive lines
-          print(f'{blanks}│', end='')
-        print('• {:s}'.format(tokens[pos:wrap+pos].hex(' ')))
-        old_pos = pos
+    # Erase current line for the preview
+    print('\033[2K\r', end='')
+
+    # Print what we have gathered from this pass
+    prefix = f'{GOLD}{old_info}{GRAY}{step:+5X}{RESET}'
+    for idx, row in enumerate(printer.result):
+      if idx:
+        prefix = blanks
+      print(f'{prefix}│{printer.prefix}{row}{printer.suffix}')
+
+    # If enabled, print what we got inside track just before jump head
+    if jump_detected and look_behind:
+      printer(LKUP, data_image[ptr_val-lookup:ptr_val])
+      for row in printer.result:
+        print(f'{blanks}│{printer.prefix}{row}{printer.suffix}')
+
+    # Print preview line from the current location
+    printer(PREV, data_image[ptr_val:ptr_val+lookup])
+    print(f'{GRAY}{info}   **{RESET}│{printer.prefix}{printer.result[0]}{printer.suffix}', end='')
 
     old_ptr_val = ptr_val
     old_step = step
@@ -251,13 +227,16 @@ def main():
   if data_offset == 0:
     data_offset = code_offset
 
+  term_h, _ = get_terminal_size()
+  print(f'\033[2J\033[{term_h};1H\033[?7l', end='')
+
   # Print all the metadata
   print('FILE: {}'.format(filename))
   print('RAM: {:08x}'.format(code_offset))
   print('ROM: {:08x}'.format(data_offset))
-  print('SIZE: {:04x}'.format(size))
+  print('ARGS: {:s}'.format(args.resolver_settings))
   print('══════════════════════════')
-
+  print('\033[?25l', end='')  # Hide cursor
   # Start the main loop
   try:
     mainloop(
@@ -275,6 +254,7 @@ def main():
       update_mem=update_mem,
       frequency=args.frequency)
   except KeyboardInterrupt:
+    print('\033[?25h\033[?7h', end='')  # Show cursor
     exit(0)
 
 if __name__ == '__main__':
