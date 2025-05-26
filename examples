@@ -53,3 +53,20 @@
 /proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7053:0x7049 -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
 /proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7054:0x704a -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
 /proc/`pidof nsfplay.exe`/mem $((0xec7194-0x7040)) -M hilo 0x7055:0x704b -f 60 -l2 -r $((0x112cde0-0xcd40)) -u
+
+# Terminator 2
+## Conductors
+$MEDNAFEN $RAM -r $ROM -M hilo 0x33a:0x328  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x33d:0x32b  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x340:0x32e  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x343:0x331  -w6 -l5 -j 0x40 -E 85 -f 30
+## Modifiers
+$MEDNAFEN $RAM -r $ROM -M hilo 0x33b:0x329  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x33e:0x32c  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x341:0x32f  -w6 -l5 -j 0x40 -E 85 -f 30
+$MEDNAFEN $RAM -r $ROM -M hilo 0x344:0x332  -w6 -l5 -j 0x40 -E 85 -f 30
+## Sequences
+$MEDNAFEN $RAM -r $ROM -M word         0x4  -w4 -E 85
+$MEDNAFEN $RAM -r $ROM -M word         0x6  -w4 -E 85
+$MEDNAFEN $RAM -r $ROM -M word         0x8  -w4 -E 85
+$MEDNAFEN $RAM -r $ROM -M word         0xa  -w4 -E 85
