@@ -87,13 +87,13 @@ class HiLoResolver:
     else:
       offset = 0
 
-    if lo_addr > offset:
-      final_lo_addr = lo_addr + offset
-    else:
-      final_lo_addr = offset - lo_addr
 
-    address = hi_addr + final_lo_addr
-    self.info = '{:04X}'.format(address)
+    address = hi_addr + lo_addr + offset
+
+    if self.offset_ptr is not None:
+      self.info = '{:04X}+{:02X}'.format(hi_addr + lo_addr, offset)
+    else:
+      self.info = '{:04X}'.format(address)
 
     return address
 
