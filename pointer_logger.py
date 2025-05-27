@@ -20,8 +20,9 @@ from shutil import get_terminal_size
 
 from resolvers import HiLoResolver, WordResolver, DwordResolver, TableResolver, OrderTableResolver
 from printers import HexPrinter
-from printers import FWRD, BKWD, FJMP, BJMP, REST, PREV, LKUP  # Our lookup states
 from memory_reader import Memory
+from consts import FWRD, BKWD, FJMP, BJMP, REST, PREV, LKUP
+from consts import GRAY, GOLD, RESET
 
 RESOLVER_MAP = {
   'word': (
@@ -62,15 +63,6 @@ RESOLVER_MAP = {
     '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
 }
-
-GRAY  = "\033[90m"
-BGRAY = "\033[37m"
-RED   = "\033[31m"
-GOLD  = "\033[33m"
-BRED  = "\033[91m"
-BLUE  = "\033[34m"
-BBLUE = "\033[94m"
-RESET = "\033[0m"
 
 # Main processing loop
 def mainloop(
