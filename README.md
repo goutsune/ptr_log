@@ -6,9 +6,7 @@ The next step from here is to write down this information for later use.
 TODO
 ====
 
- * Add 16-bit pointer support
  * Make a map of commands and their sizes?
- * Add timestamp?
- * Rewrite in ncurses
  * And allow watching multiple pointers as defined by config in json
- * Add support for double-pointers from known pointer subroutine commmands
+ * Add support for emulator nested pointers, possibly helping with banking
+ * Define a few driver-specific printers to refine interface

@@ -6,10 +6,13 @@ FJMP_PFX = '► ' + BRED
 BJMP_PFX = '◄ ' + BBLUE
 PREV_PFX = '  ' + GRAY
 LKUP_PFX = '▲ ' + GOLD
+FWRD_PFX = '• '
 TAIL_SFX = '~' + RESET
 
+
 class HexPrinter:
-  '''The default printer class, interface emits hexdump of read bytes according given action
+  '''The default printer class, emits hexdump of read bytes  according given
+  action
   '''
 
   end_pattern = None
@@ -30,14 +33,10 @@ class HexPrinter:
       ]
 
   def __call__(self, action, tokens):
-    # The caller is supposed to update buffers before calling. Then we check action and format required
-    # buffer according to lookup / width buffer and return 3 items:
-    # 1. Prefix string (e.g color set sequence)
-    # 2. A list of printouts split according to width
-    # 3. Suffix string (e.g. color reset sequence)
-    # The caller is then supposed to print each result line as it sees suitable.
+    # The caller is supposed to pass resulting buffer (either extracted or
+    # lookup limit) and action that is happening. Printer then updates its
+    # state which is to be expected by caller.
 
-    seq_end_found = False
     self.result = self.format_tokens(tokens)
     self.suffix = RESET
 
@@ -57,12 +56,13 @@ class HexPrinter:
 
     # Normal step
     elif action == FWRD:
-      self.prefix = '• '
+      self.prefix = FWRD_PFX
       self.suffix = ''
 
+    # Preview line
     elif action == PREV:
       self.prefix = PREV_PFX
 
+    # Backward lookup on jump
     elif action == LKUP:
       self.prefix = LKUP_PFX
-
