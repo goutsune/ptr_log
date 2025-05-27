@@ -22,9 +22,8 @@ from consts import GRAY, GOLD, RESET
 
 
 # Main processing loop
-def mainloop(filename, ram_ptr, data_ptr, resolver, shift, buffer_len,
-             jump_threshold, preview, end_pattern, look_behind, max_octets,
-             update_mem, frequency):
+def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
+             preview, end_pattern, look_behind, max_octets, frequency):
 
   # Code block, read every time when resolving pointers
   code = Memory(filename, ram_ptr)
@@ -34,8 +33,6 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, buffer_len,
   printer = HexPrinter(max_octets, end_pattern=end_pattern)
 
   # Setup global state
-  data_image = data[0:buffer_len]
-
   ptr = resolver(code) + shift
   info = resolver.info
 
@@ -50,7 +47,7 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, buffer_len,
   next_time = time.perf_counter()
 
   # Print preview line from the current location
-  printer(PREV, data_image[ptr:ptr + preview])
+  printer(PREV, data[ptr:ptr + preview])
   stdout.write(
     f'{GRAY}{info}   **{RESET}│'
     f'{printer.prefix}{printer.result[0]}{printer.suffix}')
@@ -76,22 +73,14 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, buffer_len,
     jump_detected = diff > jump_threshold or diff < 0
     jmp_dir = FJMP if diff > 0 else BJMP
 
-    if jump_detected:
-      # Update memory image on jumps
-      if update_mem:
-        data_image = data[0:buffer_len]
-        if data_image is None or len(data_image) < buffer_len:
-          stdout.write('\033[?25h\033[?7h')  # Show cursor
-          exit(1)  # Exit on read failure
-
     # On forward jump display data after old pointer
     # and before new pointer for inspection
     if jump_detected:
-      printer(jmp_dir, data_image[old_ptr: old_ptr+preview])
+      printer(jmp_dir, data[old_ptr: old_ptr+preview])
 
     # Main print routine
     else:
-      printer(FWRD, data_image[old_ptr: old_ptr+diff])
+      printer(FWRD, data[old_ptr: old_ptr+diff])
 
     # Erase current line for the preview
     stdout.write('\033[2K\r')
@@ -107,14 +96,14 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, buffer_len,
 
     # If enabled, print what we got inside track just before jump head
     if jump_detected and look_behind:
-      printer(LKUP, data_image[ptr-preview: ptr])
+      printer(LKUP, data[ptr-preview: ptr])
       for row in printer.result:
         stdout.write(
           f'{blanks}│'
           f'{printer.prefix}{row}{printer.suffix}\n')
 
     # Print preview line from the current location
-    printer(PREV, data_image[ptr: ptr+preview])
+    printer(PREV, data[ptr: ptr+preview])
     stdout.write(
       f'{GRAY}{info}   **{RESET}│'
       f'{printer.prefix}{printer.result[0]}{printer.suffix}')

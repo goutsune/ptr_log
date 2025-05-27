@@ -139,21 +139,10 @@ def get_parser():
     default=0x40,
     help='Wrap hex output after this many bytes')
   parser.add_argument(
-    '-u',
-    '--update-mem',
-    action='store_true',
-    help='Refresh data image on every jump')
-  parser.add_argument(
     '-f',
     '--frequency',
     type=int_autobase,
     default=120,
     help='Pointer refresh frequency in Hz')
-  parser.add_argument(
-    '-s',
-    '--buffer_len',
-    type=int_autobase,
-    default=0x10000,
-    help='Memory snapshot size')
 
   return parser
