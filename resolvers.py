@@ -23,7 +23,7 @@ class WordResolver:
     if 'b' in flags:
       self.big_endian = True
 
-  def __call__(self, memory):
+  def __call__(self, memory, _):
 
     if self.big_endian: base = memory.word_be(self.base_ptr)
     else: base = memory.word_le(self.base_ptr)
@@ -42,7 +42,7 @@ class DwordResolver(WordResolver):
   '''Same as word resolver, but we have 32 bits to deal with.
   '''
 
-  def __call__(self, memory):
+  def __call__(self, memory, _):
 
     if self.big_endian: base = memory.dword_be(self.base_ptr)
     else: base = memory.dword_le(self.base_ptr)
@@ -77,7 +77,7 @@ class HiLoResolver:
     except TypeError:
       pass
 
-  def __call__(self, memory):
+  def __call__(self, memory, _):
 
     hi_addr = memory.byte(self.high) * 0x100
     lo_addr = memory.byte(self.low)
@@ -138,8 +138,7 @@ class TableResolver:
     if 'd' in flags: self.index_is_pointer = True
     if 'o' in flags: self.print_offset = True
 
-  def __call__(self, memory):
-
+  def __call__(self, memory, data):
     # Get data index
     if self.index_is_word: data_index = memory.word_le(self.data_index_ptr)
     else: data_index = memory.byte(self.data_index_ptr)
@@ -210,8 +209,7 @@ class OrderTableResolver:
     if 'o' in flags: self.print_offset = True
     if 'W' in flags: self.offset_is_word = True
 
-  def __call__(self, memory):
-
+  def __call__(self, memory, data):
     # Get order index
     index = memory.byte(self.order_index_ptr)
     # Get pattern number in order list

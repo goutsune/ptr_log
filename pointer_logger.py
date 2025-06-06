@@ -33,7 +33,7 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
   printer = HexPrinter(max_octets, end_pattern=end_pattern)
 
   # Setup global state
-  ptr = resolver(code) + shift
+  ptr = resolver(code, data) + shift
   info = resolver.info
 
   old_ptr = ptr
@@ -59,7 +59,7 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
     old_info = resolver.info
 
     # Calculate new pointer
-    ptr = resolver(code) + shift
+    ptr = resolver(code, data) + shift
     info = resolver.info
 
     # Wait for period before checking if something changes
