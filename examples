@@ -70,3 +70,12 @@ $MEDNAFEN $RAM -r $ROM -M word         0x4  -w4 -E 85
 $MEDNAFEN $RAM -r $ROM -M word         0x6  -w4 -E 85
 $MEDNAFEN $RAM -r $ROM -M word         0x8  -w4 -E 85
 $MEDNAFEN $RAM -r $ROM -M word         0xa  -w4 -E 85
+
+# Ferrari Grand Challenge (Track 1)
+## This actually has more complex structure with orders being conductor tracks,
+## but I got lucky: the first byte of command syntax is always pattern number
+$MEDNAFEN $RAM -r $ROM -M order 0x8f17:0x9e2a:0x42:0x47::135 -E ff
+$MEDNAFEN $RAM -r $ROM -M order 0x8f88:0x9e2a:0x43:0x48::135 -E ff
+$MEDNAFEN $RAM -r $ROM -M order 0x8fb8:0x9e2a:0x44:0x49::135 -E ff
+$MEDNAFEN $RAM -r $ROM -M order 0x8fec:0x9e2a:0x45:0x4a::135 -E ff -l2
+$MEDNAFEN $RAM -r $ROM -M order 0x8ff2:0x9e2a:0x46:0x4b::135 -E ff -l2
