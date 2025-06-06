@@ -44,6 +44,13 @@ class Memory:
   def word_be(self, address):
     return int.from_bytes(self[address:address+2], 'big')
 
+  # Vertically aligned word, common on 6502
+  def vword_le(self, address, stride):
+    return int.from_bytes((self[address]+self[address + stride]), 'little')
+
+  def vword_be(self, address, stride):
+    return int.from_bytes((self[address]+self[address + stride]), 'big')
+
   def dword_le(self, address):
     return int.from_bytes(self[address:address+4], 'little')
 
