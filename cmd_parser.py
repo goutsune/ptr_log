@@ -133,6 +133,11 @@ def get_parser():
     action='store_true',
     help='Print values before new pointer after jump')
   parser.add_argument(
+    '-a',
+    '--look-ahead',
+    action='store_true',
+    help='Print values after new pointer after jump')
+  parser.add_argument(
     '-w',
     '--max_octets',
     type=int_autobase,

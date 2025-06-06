@@ -23,7 +23,7 @@ from consts import GRAY, GOLD, RESET
 
 # Main processing loop
 def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
-             preview, end_pattern, look_behind, max_octets, frequency):
+             preview, end_pattern, look_behind, look_ahead, max_octets, frequency):
 
   # Code block, read every time when resolving pointers
   code = Memory(filename, ram_ptr)
@@ -97,6 +97,12 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
     # If enabled, print what we got inside track just before jump head
     if jump_detected and look_behind:
       printer(LKUP, data[ptr-preview: ptr])
+      for row in printer.result:
+        stdout.write(
+          f'{blanks}│'
+          f'{printer.prefix}{row}{printer.suffix}\n')
+    elif jump_detected and look_ahead:
+      printer(LKUP, data[ptr: ptr+preview])
       for row in printer.result:
         stdout.write(
           f'{blanks}│'
