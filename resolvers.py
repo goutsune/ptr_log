@@ -190,7 +190,7 @@ class OrderTableResolver:
   data_table_stride = None
   info = ''
 
-  offset_is_word = False  # in case your offset is 16 bit wide
+  offset_is_word = False  # in case your offset is 16 bit wide, no vword support
   print_offset = False    # Display resulting addres for track data
   table_ptr_be = False    # When stride is given, assume first value is high byte
 

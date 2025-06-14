@@ -94,3 +94,8 @@ class HexPrinter:
     # Backward lookup on jump
     elif action == LKUP:
       self.prefix = LKUP_PFX
+
+      if self.end_patterns:
+        pos, sz = self.pattern_search(tokens, direction=False)
+        if pos >= 0:
+          self.result = self.format_tokens(tokens[pos:])
