@@ -126,7 +126,7 @@ def main():
     args.end_pattern.replace(',', ' '))
 
   # Clear screen, disable cursor, disable wrap
-  term_h, term_w = get_terminal_size()
+  term_w, term_h = get_terminal_size()
   stdout.write(f'\033[2J\033[{term_h};1H\033[?7l\033[?25l')
 
   # Print some settings
