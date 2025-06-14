@@ -30,7 +30,7 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
   # Data block, static by default, defaults to code block
   data = Memory(filename, data_ptr)
   # Printer class which consumes extracted bytes
-  printer = HexPrinter(max_octets, end_pattern=end_pattern)
+  printer = HexPrinter(max_octets, end_patterns=end_patterns)
 
   # Setup global state
   ptr = resolver(code, data) + shift
@@ -122,8 +122,9 @@ def main():
     if args.data_ptr is None else args.data_ptr
   args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](
     *args.resolver_settings.split(':'))
-  args_dict['end_pattern'] = bytes.fromhex(
-    args.end_pattern.replace(',', ' '))
+  # I want my args as a list of patterns like bf,ff/bd/a1,??,??.
+  args_dict['end_patterns'] = args.end_pattern.split('/')
+  args_dict.pop('end_pattern')
 
   # Clear screen, disable cursor, disable wrap
   term_w, term_h = get_terminal_size()
