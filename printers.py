@@ -49,15 +49,27 @@ class HexPrinter:
       ]
 
   def pattern_search(self, tokens, direction=True):
-    # Direction determins if we return first match or last
-    # TODO: Return farthest match across all patterns if we do backward search
+    # Direction determines if we return first match position or last
+    best_pos = len(tokens) if direction else -1
+    best_sz = 0
+
     for pattern, size in self.end_patterns:
       matches = list(pattern.finditer(tokens))
       if matches:
         pos = matches[0] if direction else matches[-1]
-        return pos.start(), size
+        if direction:
+          if pos.start() < best_pos:
+            best_pos = pos.start()
+            best_sz = size
+        else:
+          if pos.start() > best_pos:
+            best_pos = pos.start()
+            best_sz = size
 
-    return -1, 0
+    if (direction and best_pos == len(tokens)) or (not direction and best_pos == -1):
+      return -1, 0
+
+    return best_pos, best_sz
 
   def __call__(self, action, tokens):
     # The caller is supposed to pass resulting buffer (either extracted or
