@@ -123,7 +123,10 @@ def main():
   args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](
     *args.resolver_settings.split(':'))
   # I want my args as a list of patterns like bf,ff/bd/a1,??,??.
-  args_dict['end_patterns'] = args.end_pattern.split('/')
+  if args.end_pattern:
+    args_dict['end_patterns'] = args.end_pattern.split('/')
+  else:
+    args_dict['end_patterns'] = []
   args_dict.pop('end_pattern')
 
   # Clear screen, disable cursor, disable wrap
