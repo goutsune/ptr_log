@@ -21,6 +21,7 @@ class HexPrinter:
   prefix = ''
   result = ''
   suffix = ''
+  action = None
 
   def __init__(self, width, **kwargs):
     self.width = width
@@ -76,8 +77,9 @@ class HexPrinter:
     # lookup limit) and action that is happening. Printer then updates its
     # state which is to be expected by caller.
 
+    self.suffix = ''
+    self.action = action
     self.result = self.format_tokens(tokens)
-    self.suffix = RESET
 
     # On detected jump, let's see if track end sequence is within lookup area
     if (action == FJMP or action == BJMP) and self.end_patterns:
@@ -111,3 +113,29 @@ class HexPrinter:
         pos, sz = self.pattern_search(tokens, direction=False)
         if pos >= 0:
           self.result = self.format_tokens(tokens[pos:])
+
+
+class BarPrinter(HexPrinter):
+
+  def format_tokens(self, tokens):
+
+    if self.action == FWRD and len(tokens) == 1:
+      val = int.from_bytes(tokens, signed=True)
+      if abs(val) < 0x20:
+        return ["█"*val]
+
+    return super().format_tokens(tokens)
+
+
+class LinePrinter(HexPrinter):
+
+  def format_tokens(self, tokens):
+
+    if self.action == FWRD and len(tokens) == 1:
+      val = int.from_bytes(tokens, signed=True)
+      shift = 0x10
+      #if abs(val) < shift:
+      pos = shift + val
+      return [f'{" "*pos}|']
+
+    return super().format_tokens(tokens)

@@ -6,6 +6,10 @@ from resolvers import (
   DwordResolver,
   TableResolver,
   OrderTableResolver
+from printers import (
+  HexPrinter,
+  BarPrinter,
+  LinePrinter,
 )
 
 
@@ -63,6 +67,17 @@ RESOLVER_MAP = {
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
+PRINTER_MAP = {
+  'hex': (
+    HexPrinter,
+    'Generic hex dump printer, uses global arguments\n'),
+  'bar': (
+    BarPrinter,
+    'Hex printer extension that plots values below 0x20 as a bar'),
+  'line': (
+    LinePrinter,
+    'Hex printer extension that plots both positive and negative values'
+  )
 }
 
 
@@ -85,6 +100,10 @@ def get_parser():
 
   resolver_help = '\n'.join(
     f'{key}: {value[1]}' for key, value in RESOLVER_MAP.items())
+
+  printer_help = '\n'.join(
+    f'{key}: {value[1]}' for key, value in PRINTER_MAP.items())
+
   parser.add_argument(
     '-M', '--resolve-method',
     type=str,
@@ -92,6 +111,14 @@ def get_parser():
     choices=RESOLVER_MAP,
     help=f'Function to resolve driver-specific data into memory offset:\n'
          + resolver_help)
+
+  parser.add_argument(
+    '-P', '--printer-class',
+    type=str,
+    default='hex',
+    choices=PRINTER_MAP,
+    help=f'Class used to provide per-row result printout:\n'
+         + printer_help)
 
   parser.add_argument(
     'resolver_settings',

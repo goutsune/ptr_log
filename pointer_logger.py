@@ -14,23 +14,22 @@ from sys import stdout
 from time import sleep
 from traceback import print_exc
 
-from cmd_parser import get_parser, RESOLVER_MAP
+from cmd_parser import get_parser, RESOLVER_MAP, PRINTER_MAP
 from memory_reader import Memory
-from printers import HexPrinter
 from consts import FWRD, BKWD, FJMP, BJMP, REST, PREV, LKUP
 from consts import GRAY, GOLD, RESET
 
 
 # Main processing loop
 def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
-             preview, end_patterns, look_behind, max_octets, frequency):
+             preview, end_patterns, look_behind, max_octets, frequency, printer_class):
 
   # Code block, read every time when resolving pointers
   code = Memory(filename, ram_ptr)
   # Data block, static by default, defaults to code block
   data = Memory(filename, data_ptr)
   # Printer class which consumes extracted bytes
-  printer = HexPrinter(max_octets, end_patterns=end_patterns)
+  printer = PRINTER_MAP[printer_class][0](max_octets, end_patterns=end_patterns)
 
   # Setup global state
   ptr = resolver(code, data) + shift
@@ -153,10 +152,10 @@ def main():
     # Show cursor, enable wrapping
     stdout.write('\033[?25h\033[?7h')
     exit(0)
-  except OSError:
+  except Exception:
     # Show cursor, enable wrapping
-    print_exc()
     stdout.write('\033[?25h\033[?7h')
+    print_exc()
     exit(1)
 
 
