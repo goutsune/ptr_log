@@ -57,6 +57,12 @@ class Memory:
   def dword_be(self, address):
     return int.from_bytes(self[address:address+4], 'big')
 
+  def qword_le(self, address):
+    return int.from_bytes(self[address:address+8], 'little')
+
+  def qword_be(self, address):
+    return int.from_bytes(self[address:address+8], 'big')
+
   def close(self):
     self.handle.close()
 
@@ -83,7 +89,7 @@ class MemoryReadV(Memory):
     self.base = base_offset
     self.local_iov = IOVec()
     self.remote_iov = IOVec()
-    self.buf = bytearray(0x10000)
+    self.buf = bytearray(0x10000)  # allow reading up to this amount of bytes
     self.c_buf = (ctypes.c_char * 0x10000).from_buffer(self.buf)
     self.local_iov.iov_base = ctypes.cast(self.c_buf, ctypes.c_void_p)
 

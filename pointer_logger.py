@@ -107,6 +107,20 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
 
     old_ptr = ptr
 
+def resolve_address(resolve, addr, width, offset, filename):
+
+  if resolve:
+    resolver = Memory(filename, 0)
+    if width == 32:
+      ptr = resolver.dword_le(addr)
+    else:
+      ptr = resolver.qword_le(addr)
+    resolver.close()
+  else:
+    ptr = addr
+
+  return addr + offset
+
 
 # Prepare and parse arguments here
 def main():
@@ -116,6 +130,9 @@ def main():
 
   # Pre-cook some more complex settings here
   args_dict['data_ptr'] = args.ram_ptr if args.data_ptr is None else args.data_ptr
+
+  args_dict['ram_ptr'] = resolve_address(*args_dict['ram_ptr'], args.filename)
+  args_dict['data_ptr'] = resolve_address(*args_dict['data_ptr'], args.filename)
 
   s_args, s_kwargs = subargs_parser(args.resolver_settings)
   args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](*s_args, **s_kwargs)
@@ -129,8 +146,8 @@ def main():
 
   # Print some settings
   print(
-    'RAM:  {:x}\n'.format(args_dict['ram_ptr']) +
-    'ROM:  {:x}\n'.format(args_dict['data_ptr']) +
+    'RAM:  0x{:x}\n'.format(args.ram_ptr) +
+    'ROM:  0x{:x}\n'.format(args.data_ptr) +
     '{:s}: {:s}\n'.format(args_dict['resolve_method'].upper(),
                           args_dict['resolver_settings']) +
     '═'*term_w)

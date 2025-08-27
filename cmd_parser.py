@@ -1,4 +1,5 @@
 import argparse
+import re
 
 from resolvers import (
   HiLoResolver,
@@ -32,6 +33,25 @@ def int_autobase(i):
     return i
   else:
     return int(i, 0)
+
+
+def parse_addr(tokens):
+  regex = (
+    r'(@)?'
+    r'((?:0x)?[0-9a-fA-F]+)'
+    r'(?:,([dq]))?'
+    r'(?:\+((?:0x)?[0-9a-fA-F]+))?'
+  )
+  result = re.match(regex, tokens)
+  resolve, addr, width, offset = result.groups()
+
+  # Normalize a bit
+  resolve = bool(resolve)
+  addr = int_autobase(addr)  # Fail for None
+  width = 32 if width == 'd' else 64
+  offset = int_autobase(offset) if offset else 0
+
+  return resolve, addr, width, offset
 
 
 class CustomFormatter(
@@ -72,7 +92,7 @@ RESOLVER_MAP = {
     '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: w - Index is word, W - Offset is word, d - Index is pointer\n'
     '           o - Print final offset\n'
-    '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.'),
+    '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.\n'),
 
   'order': (
     OrderTableResolver,
@@ -87,11 +107,10 @@ PRINTER_MAP = {
     'Generic hex dump printer, uses global arguments\n'),
   'bar': (
     BarPrinter,
-    'Hex printer extension that plots values below 0x20 as a bar'),
+    'Hex printer extension that plots values below 0x20 as a bar\n'),
   'line': (
     LinePrinter,
-    'Hex printer extension that plots both positive and negative values'
-  )
+    'Hex printer extension that plots both positive and negative values\n'),
 }
 
 
@@ -108,9 +127,15 @@ def get_parser():
     help='Memory file to read from (can be mmap too)')
   parser.add_argument(
     'ram_ptr',
-    type=int_autobase,
+    type=parse_addr,
     help='Emulator/player RAM offset used for analysis.\n'
-         'Should point to internal address 0x0000')
+         'Should point to internal address 0x0 or segment start\n'
+         'Format: [@]0x123123[,d|q][+offset]\n'
+         '  @ - resolve actual address from this pointer\n'
+         '  q - pointer is 64 bits (default)\n'
+         '  d - pointer is 32 bits\n'
+         '  + - add this offset to actual or resolved address\n'
+         'Example: @0x1025100,d+0x100\n')
 
   resolver_help = '\n'.join(
     f'{key}: {value[1]}' for key, value in RESOLVER_MAP.items())
@@ -150,8 +175,9 @@ def get_parser():
   parser.add_argument(
     '-r',
     '--data-ptr',
-    type=int_autobase,
-    help='Use this memory location to read data segment')
+    type=parse_addr,
+    help='Use this memory location to read data segment, \n'
+          'same format as main pointer')
   parser.add_argument(
     '-j',
     '--jump-threshold',
