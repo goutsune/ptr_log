@@ -13,8 +13,7 @@ TAIL_SFX = '~' + RESET
 
 
 class HexPrinter:
-  '''The default printer class, emits hexdump of read bytes  according given
-  action
+  '''The default printer class, emits hexdump of read bytes according to action
   '''
 
   end_patterns = None
@@ -23,16 +22,16 @@ class HexPrinter:
   suffix = ''
   action = None
 
-  def __init__(self, width, **kwargs):
-    self.width = width
-    if 'end_patterns' in kwargs:
+  def __init__(self, width='4', end_patterns=None, **kwargs):
+    self.width = int(width, 0)
+    if end_patterns is not None:
       # Build a list of regex patterns which we can use for matching
       regexes = [
         b''.join(
           b'.' if x == '??'
           else bytes.fromhex(x) for x in y.split(',')
         )
-        for y in kwargs['end_patterns']
+        for y in end_patterns.split('/')
       ]
 
       # Now build a list of tuples containing pattern length and compiled pattern
