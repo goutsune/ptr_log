@@ -14,7 +14,7 @@ from sys import stdout
 from time import sleep
 from traceback import print_exc
 
-from cmd_parser import get_parser, RESOLVER_MAP, PRINTER_MAP
+from cmd_parser import get_parser, subargs_parser, RESOLVER_MAP, PRINTER_MAP
 from memory_reader import Memory
 from consts import FWRD, BKWD, FJMP, BJMP, REST, PREV, LKUP
 from consts import GRAY, GOLD, RESET
@@ -22,14 +22,12 @@ from consts import GRAY, GOLD, RESET
 
 # Main processing loop
 def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
-             preview, end_patterns, look_behind, max_octets, frequency, printer_class):
+             preview, look_behind, frequency, printer):
 
   # Code block, read every time when resolving pointers
   code = Memory(filename, ram_ptr)
   # Data block, static by default, defaults to code block
   data = Memory(filename, data_ptr)
-  # Printer class which consumes extracted bytes
-  printer = PRINTER_MAP[printer_class][0](max_octets, end_patterns=end_patterns)
 
   # Setup global state
   ptr = resolver(code, data) + shift
@@ -117,16 +115,13 @@ def main():
   args_dict = vars(args)
 
   # Pre-cook some more complex settings here
-  args_dict['data_ptr'] = args.ram_ptr \
-    if args.data_ptr is None else args.data_ptr
-  args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](
-    *args.resolver_settings.split(':'))
-  # I want my args as a list of patterns like bf,ff/bd/a1,??,??.
-  if args.end_pattern:
-    args_dict['end_patterns'] = args.end_pattern.split('/')
-  else:
-    args_dict['end_patterns'] = []
-  args_dict.pop('end_pattern')
+  args_dict['data_ptr'] = args.ram_ptr if args.data_ptr is None else args.data_ptr
+
+  s_args, s_kwargs = subargs_parser(args.resolver_settings)
+  args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](*s_args, **s_kwargs)
+
+  s_args, s_kwargs = subargs_parser(args.printer_settings)
+  args_dict['printer'] = PRINTER_MAP[args.printer_class][0](*s_args, **s_kwargs)
 
   # Clear screen, disable cursor, disable wrap
   term_w, term_h = get_terminal_size()
@@ -143,7 +138,8 @@ def main():
   # We don't need these anymore
   args_dict.pop('resolve_method')
   args_dict.pop('resolver_settings')
-
+  args_dict.pop('printer_class')
+  args_dict.pop('printer_settings')
   # Start the main loop
   try:
     mainloop(**args_dict)

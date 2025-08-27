@@ -12,6 +12,20 @@ from printers import (
   LinePrinter,
 )
 
+def subargs_parser(tokens):
+  parts = tokens.split(':')
+  args = []
+  kwargs = {}
+
+  for part in parts:
+    if '=' not in part:
+      args.append(part)
+    else:
+      key, value = part.split('=', 1)
+      kwargs[key] = value
+
+  return args, kwargs
+
 
 def int_autobase(i):
   if type(i) is int:
@@ -123,7 +137,9 @@ def get_parser():
   parser.add_argument(
     'resolver_settings',
     type=str,
-    help='Arguments for resolver function')
+    help='Arguments for resolver function, it is a colon-separated\n'
+        '    list of values or key=value pairs. See resolver class\n'
+        '    sources for actual argument order and names\n')
 
   parser.add_argument(
     '-e',
@@ -149,22 +165,17 @@ def get_parser():
     default=4,
     help='Explore this many bytes when step is unknown')
   parser.add_argument(
-    '-E',
-    '--end_pattern',
+    '-p',
+    '--printer_settings',
     type=str,
-    default="",
-    help='Comma separated bytes list to find tack end.')
+    default='',
+    help='Colon separated string of printer parameters,\n'
+         '    see resolver settings for format')
   parser.add_argument(
     '-b',
     '--look-behind',
     action='store_true',
     help='Print values before new pointer after jump')
-  parser.add_argument(
-    '-w',
-    '--max_octets',
-    type=int_autobase,
-    default=0x40,
-    help='Wrap hex output after this many bytes')
   parser.add_argument(
     '-f',
     '--frequency',
