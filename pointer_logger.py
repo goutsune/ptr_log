@@ -70,12 +70,10 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
     jump_detected = diff > jump_threshold or diff < 0
     jmp_dir = FJMP if diff > 0 else BJMP
 
-    # On forward jump display data after old pointer
-    # and before new pointer for inspection
+    #  Main print routine
     if jump_detected:
       printer(jmp_dir, data[old_ptr: old_ptr+preview])
 
-    # Main print routine
     else:
       printer(FWRD, data[old_ptr: old_ptr+diff])
 

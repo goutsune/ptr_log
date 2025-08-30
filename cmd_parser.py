@@ -11,9 +11,14 @@ from printers import (
   HexPrinter,
   BarPrinter,
   LinePrinter,
+  MappedPrinter,
 )
 
 def subargs_parser(tokens):
+  # Handle no args case gracefully
+  if not tokens:
+    return [], {}
+
   parts = tokens.split(':')
   args = []
   kwargs = {}
@@ -111,6 +116,10 @@ PRINTER_MAP = {
   'line': (
     LinePrinter,
     'Hex printer extension that plots both positive and negative values\n'),
+  'map': (
+    MappedPrinter,
+    'Prints parsed commands from definition file, \n'
+    '    falling back to hexdump otherwise\n'),
 }
 
 
