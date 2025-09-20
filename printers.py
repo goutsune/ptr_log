@@ -164,7 +164,8 @@ class MappedPrinter(HexPrinter):
   param_parsers = {
     'b': lambda x: int.from_bytes(x, byteorder='little', signed=False),
     's': lambda x: int.from_bytes(x, byteorder='little', signed=True),
-    'w': lambda x: int.from_bytes(x, byteorder='little', signed=False),
+    'x': lambda x: f"0x{(int.from_bytes(x, byteorder='little', signed=False)):x}",
+    'w': lambda x: f"0x{(int.from_bytes(x, byteorder='little', signed=False)):x}",
   }
   note_lo = None
   note_hi = None
@@ -173,6 +174,7 @@ class MappedPrinter(HexPrinter):
   commands = None
   cmd_buckets = None
   cmd_buckets_high = None
+  parse_preview = False
 
   def parse_configuration(self, cfg):
     # Parse note and drum ranges
@@ -245,8 +247,12 @@ class MappedPrinter(HexPrinter):
     self.cmd_buckets = cmd_buckets
     self.cmd_buckets_high = buckets_high
 
-  def __init__(self, defs, *args, **kwargs):
+  def __init__(self, defs, *args, preview_cmd=False, **kwargs):
     super().__init__(*args, **kwargs)
+
+    if preview_cmd:
+      preview_cmd = int(preview_cmd, 0)
+      self.parse_preview = bool(preview_cmd)
 
     with open(defs, 'r', encoding='utf-8') as handle:
       cfg = json.load(handle)
@@ -398,7 +404,7 @@ class MappedPrinter(HexPrinter):
     if action == LKUP:
       self.result = self.format_vcmds(tokens, action, direction=False)
     # Skip tokenizer for preview line, it will always be just hex
-    elif action != PREV:
+    elif action != PREV or (self.parse_preview):
       self.result = self.format_vcmds(tokens, action, direction=True)
 
     # Forward jump
@@ -417,7 +423,8 @@ class MappedPrinter(HexPrinter):
     # Preview line
     elif action == PREV:
       self.prefix = PREV_PFX
-      self.result = self.format_tokens(tokens)
+      if not self.parse_preview:
+        self.result = self.format_tokens(tokens)
 
     # Backward lookup on jump
     elif action == LKUP:
