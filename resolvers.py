@@ -107,6 +107,7 @@ class TableResolver:
   '''
 
   data_table_ptr = None
+  data_table_stride = None
   data_index_ptr = None
   data_offset_ptr = None
   data_offset_size = None
@@ -172,7 +173,7 @@ class TableResolver:
     if self.print_offset:
       self.info = '{:02X},{:02X}:{:04X}'.format(data_index, data_offset, command_offset)
     else:
-      self.info = '{:02X},{:04X}+{:02X}'.format(data_index, data_ptr, data_offset)
+      self.info = '{:02X},{:02X}'.format(data_index, data_offset)
 
     return command_offset
 
