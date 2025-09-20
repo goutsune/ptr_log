@@ -7,6 +7,8 @@ from resolvers import (
   DwordResolver,
   TableResolver,
   OrderTableResolver
+)
+
 from printers import (
   HexPrinter,
   BarPrinter,
@@ -106,6 +108,8 @@ RESOLVER_MAP = {
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
+}
+
 PRINTER_MAP = {
   'hex': (
     HexPrinter,
