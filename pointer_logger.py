@@ -91,7 +91,13 @@ def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
 
     # If enabled, print what we got inside track just before jump head
     if jump_detected and look_behind:
-      printer(LKUP, data[ptr-preview: ptr])
+      # If it so happens printer figured out where we landed, use this delta for lookup
+      if printer.jump_addr is not None \
+          and printer.jump_addr - ptr < 0 \
+          and ptr - printer.jump_addr < preview:
+        printer(LKUP, data[printer.jump_addr:ptr])
+      else:
+        printer(LKUP, data[ptr - preview:ptr])
       for row in printer.result:
         stdout.write(
           f'{blanks}│'

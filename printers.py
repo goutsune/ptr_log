@@ -25,6 +25,10 @@ class HexPrinter:
   suffix = ''
   action = None
 
+  # Not the best place, but in case parser determined new jump position,
+  # it is to be stored here. Otherwise this is to be reset to None
+  jump_addr = None
+
   def __init__(self, width='4', end_patterns=None, *args, **kwargs):
     self.width = int(width, 0)
 
@@ -276,11 +280,15 @@ class MappedPrinter(HexPrinter):
 
       if vcmd.parameters:
         for parameter in vcmd.parameters:
-          # TODO: Add x/d/s etc specifiers, or better: move that to parser lambdas
-          representations.append(
-            '{}={:x}'.format(
-              parameter.name,
-              parameter.parser(args[pos:pos+parameter.length])))
+          # TODO: Extend printers to objects that store length, print format and parser separately
+          parameter_argument = parameter.parser(args[pos:pos+parameter.length])
+          if parameter.name:
+            # Only works for 16-bit LE words for now
+            if parameter.name == 'addr':
+              self.jump_addr = int.from_bytes(args[pos:pos+parameter.length], 'little')
+            representations.append('{}={}'.format(parameter.name, parameter_argument))
+          else:
+            representations.append(str(parameter_argument))
           pos += parameter.length
 
         return repr_format.format(vcmd.name, ', '.join(representations)), vcmd, vcmd.length
@@ -373,6 +381,7 @@ class MappedPrinter(HexPrinter):
   def __call__(self, action, tokens):
     self.suffix = RESET
     self.action = action
+    self.jump_addr = None
 
     # Only lookup needs backward parsing
     if action == LKUP:
