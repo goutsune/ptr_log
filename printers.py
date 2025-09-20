@@ -123,11 +123,17 @@ class HexPrinter:
 
 class BarPrinter(HexPrinter):
 
+  limit = None
+
+  def __init__(self, limit='0x20', *args, **kwargs):
+    self.limit = int(limit, 0)
+    super().__init__(*args, **kwargs)
+
   def format_tokens(self, tokens):
 
-    if self.action == FWRD and len(tokens) == 1:
-      val = int.from_bytes(tokens, signed=True)
-      if abs(val) < 0x20:
+    if self.action  in (FWRD, PREV):
+      val = int.from_bytes(tokens[:1], signed=True)
+      if abs(val) < self.limit:
         return ['█'*val]
 
     return super().format_tokens(tokens)
@@ -135,13 +141,18 @@ class BarPrinter(HexPrinter):
 
 class LinePrinter(HexPrinter):
 
+  shift = None
+
+  def __init__(self, shift='0x10', mult='1',*args, **kwargs):
+    self.shift = int(shift, 0)
+    self.multiplier = float(mult)
+    super().__init__(*args, **kwargs)
+
   def format_tokens(self, tokens):
 
-    if self.action == FWRD and len(tokens) == 1:
-      val = int.from_bytes(tokens, signed=True)
-      shift = 0x10
-      #if abs(val) < shift:
-      pos = shift + val
+    if self.action in (FWRD, PREV):
+      val = int.from_bytes(tokens[:1], signed=True)
+      pos = self.shift + round(val*self.multiplier)
       return [f'{' '*pos}|']
 
     return super().format_tokens(tokens)
