@@ -4,9 +4,11 @@ import re
 from resolvers import (
   HiLoResolver,
   WordResolver,
+  WordStackResolver,
+  HiLoStackResolver,
   DwordResolver,
   TableResolver,
-  OrderTableResolver
+  OrderTableResolver,
 )
 
 from printers import (
@@ -108,6 +110,16 @@ RESOLVER_MAP = {
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]\n'
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
+
+  'stack': (
+    WordStackResolver,
+    'Read single 16-pointer referenced at sequencer stack.\n'
+    '    Format: STACK:HEAD, e.g. 0x5ba:0x528\n'),
+
+  'stackhl': (
+    HiLoStackResolver,
+    'Read single 16-pointer referenced at sequencer stack.\n'
+    '    Format: STACKH:STACKL:HEAD, e.g. 0x5ca:0x5ba:0x528\n'),
 }
 
 PRINTER_MAP = {

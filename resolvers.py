@@ -46,6 +46,31 @@ class WordResolver:
     return base + offset
 
 
+class WordStackResolver:
+  ''' Single pointer located at stack offset counting from the stack base
+  '''
+
+  stack_ptr = None
+  stack_head_ptr = None
+  info = ''
+
+  def __init__(self, stack_ptr, stack_head_ptr):
+
+    self.stack_ptr = int(stack_ptr, 0)
+    self.stack_head_ptr = int(stack_head_ptr, 0)
+
+  def __call__(self, memory, _):
+
+    stack_head = memory.byte(self.stack_head_ptr)
+    data_ptr = memory.word_le(self.stack_ptr + stack_head)
+    if data_ptr < 0xc000 or data_ptr > 0xd000:
+      data_ptr = memory.word_le(self.stack_ptr + stack_head+1)
+
+    self.info = '{:04X},{:02X}'.format(data_ptr, stack_head)
+
+    return data_ptr
+
+
 class DwordResolver(WordResolver):
   '''Same as word resolver, but we have 32 bits to deal with.
   '''
@@ -104,6 +129,34 @@ class HiLoResolver:
       self.info = '{:04X}'.format(address)
 
     return address
+
+
+class HiLoStackResolver:
+  ''' Single pointer located at stack offset counting from the stack base.
+  Pointer is in hilo format.
+  '''
+
+  stack_head_ptr = None
+  stack_ptr_hi = None
+  stack_ptr_lo = None
+  info = ''
+
+  def __init__(self, stack_ptr_hi, stack_ptr_lo, stack_head_ptr):
+
+    self.stack_ptr_hi = int(stack_ptr_hi, 0)
+    self.stack_ptr_lo = int(stack_ptr_lo, 0)
+    self.stack_head_ptr = int(stack_head_ptr, 0)
+
+  def __call__(self, memory, _):
+
+    stack_head = memory.byte(self.stack_head_ptr)
+    data_ptr = memory.vword_le(self.stack_ptr_lo+stack_head, self.stack_ptr_hi-self.stack_ptr_lo)
+#    if data_ptr < 0xc000 or data_ptr > 0xd000:
+#      data_ptr = memory.word_le(self.stack_ptr + stack_head+1)
+
+    self.info = '{:04X},{:02X}'.format(data_ptr, stack_head)
+
+    return data_ptr
 
 
 class TableResolver:
