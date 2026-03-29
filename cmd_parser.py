@@ -46,10 +46,10 @@ def int_autobase(i):
 
 def parse_addr(tokens):
   regex = (
-    r'(@)?'
-    r'((?:0x)?[0-9a-fA-F]+)'
-    r'(?:,([dq]))?'
-    r'(?:\+((?:0x)?[0-9a-fA-F]+))?'
+    r'(@)?'                          # is this a pointer to addr?
+    r'((?:0x)?[0-9a-fA-F]+)'         # what's the addr?
+    r'(?:,([dq]))?'                  # is this dword or qword?
+    r'(?:\+((?:0x)?[0-9a-fA-F]+))?'  # add some more bytes to that addr?
   )
   result = re.match(regex, tokens)
   resolve, addr, width, offset = result.groups()
@@ -196,7 +196,7 @@ def get_parser():
     '--shift',
     type=int_autobase,
     default=0,
-    help='Global offset when dereferencing pointers')
+    help='Global static offset when dereferencing pointers')
   parser.add_argument(
     '-r',
     '--data-ptr',
