@@ -67,23 +67,24 @@ class Memory:
     self.handle.close()
 
 
-class IOVec(ctypes.Structure):
-    _fields_ = [
-        ("iov_base", ctypes.c_void_p),
-        ("iov_len", ctypes.c_size_t),
-    ]
-
-libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
-process_vm_readv = libc.process_vm_readv
-process_vm_readv.argtypes = [
-    ctypes.c_int,                     # pid_t pid
-    ctypes.POINTER(IOVec), ctypes.c_ulong,  # const struct iovec *local_iov, ulong liovcnt
-    ctypes.POINTER(IOVec), ctypes.c_ulong,  # const struct iovec *remote_iov, ulong riovcnt
-    ctypes.c_ulong                    # flags
-]
-process_vm_readv.restype = ctypes.c_ssize_t
-
 class MemoryReadV(Memory):
+
+  class IOVec(ctypes.Structure):
+      _fields_ = [
+          ("iov_base", ctypes.c_void_p),
+          ("iov_len", ctypes.c_size_t),
+      ]
+
+  libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+  process_vm_readv = libc.process_vm_readv
+  process_vm_readv.argtypes = [
+      ctypes.c_int,                     # pid_t pid
+      ctypes.POINTER(IOVec), ctypes.c_ulong,  # const struct iovec *local_iov, ulong liovcnt
+      ctypes.POINTER(IOVec), ctypes.c_ulong,  # const struct iovec *remote_iov, ulong riovcnt
+      ctypes.c_ulong                    # flags
+  ]
+  process_vm_readv.restype = ctypes.c_ssize_t
+
   def __init__(self, filename, base_offset):
     self.pid = int(filename.split('/')[2])
     self.base = base_offset
@@ -107,7 +108,7 @@ class MemoryReadV(Memory):
     self.remote_iov.iov_base = self.base + start
     self.remote_iov.iov_len = size
 
-    nread = process_vm_readv(self.pid,
+    nread = self.process_vm_readv(self.pid,
                              ctypes.byref(self.local_iov), 1,
                              ctypes.byref(self.remote_iov), 1,
                              0)
