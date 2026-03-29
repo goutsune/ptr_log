@@ -18,6 +18,9 @@ from printers import (
   MappedPrinter,
 )
 
+from util import int_autobase
+
+
 def subargs_parser(tokens):
   # Handle no args case gracefully
   if not tokens:
@@ -35,13 +38,6 @@ def subargs_parser(tokens):
       kwargs[key] = value
 
   return args, kwargs
-
-
-def int_autobase(i):
-  if type(i) is int:
-    return i
-  else:
-    return int(i, 0)
 
 
 def parse_addr(tokens):
