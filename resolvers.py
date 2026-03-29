@@ -1,6 +1,7 @@
 '''Various resolver techniques are to be defined in this file.
 '''
 
+from memory_reader import Pointer
 
 class WordResolver:
   ''' Single pointer value resolver + dynamic offset.
@@ -12,33 +13,23 @@ class WordResolver:
   offset_ptr = None
   big_endian = False
   offset_is_word = False
+  pointer_is_paragraph = False
   info = ''
 
   def __init__(self, reader, base, offset=''):
-    self.base_ptr = int(base_ptr, 0)
+    self.base_ptr = Pointer(reader, base)
     try:
-      self.offset_ptr = int(offset_ptr, 0)
-    except TypeError:
+      self.offset_ptr = Pointer(reader, offset)
+    except ValueError:
       pass
-
-    if 'b' in flags:
-      self.big_endian = True
-
-    if 'w' in flags:
-      self.offset_is_word = True
 
   def __call__(self, memory, _):
 
-    if self.big_endian: base = memory.word_be(self.base_ptr)
-    else: base = memory.word_le(self.base_ptr)
+    base = self.base_ptr()
 
     if self.offset_ptr is not None:
-      if self.offset_is_word:
-        offset = memory.word_le(self.offset_ptr)
-        self.info = '{:04X}+{:04X}'.format(base, offset)
-      else:
-          offset = memory.byte(self.offset_ptr)
-          self.info = '{:04X}+{:02X}'.format(base, offset)
+      offset = self.offset_ptr()
+      self.info = '{:04X}:{:02X}'.format(base, offset)
     else:
       offset = 0
       self.info = '{:04X}'.format(base)
