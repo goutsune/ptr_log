@@ -161,12 +161,6 @@ class LinePrinter(HexPrinter):
 class MappedPrinter(HexPrinter):
 
   note_prefixes = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-']
-  param_parsers = {
-    'b': lambda x: int.from_bytes(x, byteorder='little', signed=False),
-    's': lambda x: int.from_bytes(x, byteorder='little', signed=True),
-    'x': lambda x: f"0x{(int.from_bytes(x, byteorder='little', signed=False)):x}",
-    'w': lambda x: f"0x{(int.from_bytes(x, byteorder='little', signed=False)):x}",
-  }
   note_lo = None
   note_hi = None
   drum_lo = None
@@ -211,14 +205,16 @@ class MappedPrinter(HexPrinter):
 
       for param in params:
         param_name, *pflags = param.split(',')
+        if pflags:
+          pflags = pflags.pop()  # Extract arguments as string, if any
+
         length = 2 if 'w' in pflags else 1
+        signed = True if 's' in pflags else False
+        endianess = 'big' if 'B' in pflags else 'little'
+        fmt = '0x{:x}' if 'h' in pflags else '{:d}'
         signature_length += length
 
-        # For now I just have size specifier, so get one item if non-empty
-        if pflags:
-          parser = self.param_parsers[pflags.pop()]
-        else:
-          parser = self.param_parsers['b']
+        parser = lambda x: fmt.format(int.from_bytes(x, byteorder=endianess, signed=signed))
 
         parameter = SimpleNamespace(
           name=param_name,
@@ -325,7 +321,7 @@ class MappedPrinter(HexPrinter):
 
       # Try to parse as command, iterate over buckets and break if we found a matching vcmd
       for cmd_size in (
-          range(self.cmd_buckets_high) if direction
+          range(self.cmd_buckets_high + 1) if direction
           else range(self.cmd_buckets_high, 0, -1)
       ):
         if cmd_size not in self.cmd_buckets: continue
