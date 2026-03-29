@@ -5,6 +5,7 @@
 import os
 import ctypes
 import ctypes.util
+from functools import partial
 
 class Memory:
   base = None
@@ -118,3 +119,29 @@ class MemoryReadV(Memory):
         raise OSError(errno, os.strerror(errno))
 
     return self.buf[:nread]
+
+
+class Pointer():
+  # Shorthands that will be passed into kind argument
+  MAP = {
+    'b': 'byte',
+    'w': 'word_le',  'W': 'word_be',
+    'v': 'vword_le', 'V': 'vword_be',
+    'd': 'dword_le', 'D': 'dword_be',
+    'q': 'qword_le', 'Q': 'qword_be',
+  }
+
+  last_value = None
+  reader_func = None
+
+  def __init__(self, reader, address, kind, *args):
+    bound = getattr(reader, self.MAP[kind])
+    func = partial(bound, address, *args)
+    self.reader_func = func
+
+  def __invert__(self):
+    return self.value
+
+  def __call__(self):
+    self.value = self.reader_func(address, extra_args)
+    return self.value
