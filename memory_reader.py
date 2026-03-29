@@ -53,6 +53,10 @@ class Memory:
   def vword_be(self, address, stride):
     return int.from_bytes((self[address]+self[address + stride]), 'big')
 
+  # Used on x86 CPUs in 16-bit mode
+  def paragraph(self, address):
+    return int.from_bytes(self[address:address+2], 'little') << 4
+
   def dword_le(self, address):
     return int.from_bytes(self[address:address+4], 'little')
 
@@ -130,6 +134,7 @@ class Pointer():
     'v': 'vword_le', 'V': 'vword_be',
     'd': 'dword_le', 'D': 'dword_be',
     'q': 'qword_le', 'Q': 'qword_be',
+    'p': 'paragraph',
   }
 
   last_value = None
