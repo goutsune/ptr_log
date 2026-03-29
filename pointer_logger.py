@@ -21,13 +21,17 @@ from consts import GRAY, GOLD, RESET
 
 
 # Main processing loop
-def mainloop(filename, ram_ptr, data_ptr, resolver, shift, jump_threshold,
+def mainloop(filename, ram_ptr, data_ptr, resolve_method, resolver_settings, shift, jump_threshold,
              preview, look_behind, frequency, printer):
 
   # Code block, read every time when resolving pointers
   code = Memory(filename, ram_ptr)
   # Data block, static by default, defaults to code block
   data = Memory(filename, data_ptr)
+
+  # Initialize resolver with our memory readers
+  s_args, s_kwargs = subargs_parser(resolver_settings)
+  resolver = RESOLVER_MAP[resolve_method][0](code, *s_args, **s_kwargs)
 
   # Setup global state
   ptr = resolver(code, data) + shift
@@ -138,9 +142,6 @@ def main():
   args_dict['ram_ptr'] = resolve_address(*args_dict['ram_ptr'], args.filename)
   args_dict['data_ptr'] = resolve_address(*args_dict['data_ptr'], args.filename)
 
-  s_args, s_kwargs = subargs_parser(args.resolver_settings)
-  args_dict['resolver'] = RESOLVER_MAP[args.resolve_method][0](*s_args, **s_kwargs)
-
   s_args, s_kwargs = subargs_parser(args.printer_settings)
   args_dict['printer'] = PRINTER_MAP[args.printer_class][0](*s_args, **s_kwargs)
 
@@ -157,8 +158,6 @@ def main():
     '═'*term_w)
 
   # We don't need these anymore
-  args_dict.pop('resolve_method')
-  args_dict.pop('resolver_settings')
   args_dict.pop('printer_class')
   args_dict.pop('printer_settings')
   # Start the main loop
