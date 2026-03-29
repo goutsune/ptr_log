@@ -6,6 +6,7 @@ import os
 import ctypes
 import ctypes.util
 from functools import partial
+from util import int_autobase
 
 class Memory:
   base = None
@@ -123,7 +124,7 @@ class MemoryReadV(Memory):
 
 class Pointer():
   # Shorthands that will be passed into kind argument
-  MAP = {
+  mapping = {
     'b': 'byte',
     'w': 'word_le',  'W': 'word_be',
     'v': 'vword_le', 'V': 'vword_be',
@@ -134,14 +135,28 @@ class Pointer():
   last_value = None
   reader_func = None
 
-  def __init__(self, reader, address, kind, *args):
-    bound = getattr(reader, self.MAP[kind])
-    func = partial(bound, address, *args)
+  def __init__(self, reader, address_str, *args, default_kind="w", **kwargs):
+
+    # Extract address specification to pass into memory reader
+    spec = address_str.split(',')
+
+    address = int_autobase(spec[0])
+    kind = spec[1] if len(spec) > 1 else default_kind
+    # Might need to rethink argument parsing here, I don't want to make resolvers aware of pointer internals,
+    # but this means I can't pass these as normal arguments. For now, it's only stride for vword, use autoint
+    extra = [int_autobase(x) for x in spec[2:]]
+
+    # Pre-bake resolver function
+    bound = getattr(reader, self.mapping[kind])
+    func = partial(bound, address, *extra)  # extra args needed by e.g. vword readers
     self.reader_func = func
 
   def __invert__(self):
+    '''Using ~pointer instead of pointer() will return last read value
+    without accessing external process memory.
+    '''
     return self.value
 
   def __call__(self):
-    self.value = self.reader_func(address, extra_args)
+    self.value = self.reader_func()
     return self.value

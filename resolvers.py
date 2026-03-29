@@ -14,7 +14,7 @@ class WordResolver:
   offset_is_word = False
   info = ''
 
-  def __init__(self, base_ptr, flags='', offset_ptr=None):
+  def __init__(self, reader, base, offset=''):
     self.base_ptr = int(base_ptr, 0)
     try:
       self.offset_ptr = int(offset_ptr, 0)
@@ -54,7 +54,7 @@ class WordStackResolver:
   stack_head_ptr = None
   info = ''
 
-  def __init__(self, stack_ptr, stack_head_ptr):
+  def __init__(self, reader, stack_ptr, stack_head_ptr):
 
     self.stack_ptr = int(stack_ptr, 0)
     self.stack_head_ptr = int(stack_head_ptr, 0)
@@ -102,7 +102,7 @@ class HiLoResolver:
   offset_ptr = None
   info = ''
 
-  def __init__(self, hi_ptr, lo_ptr, offset_ptr=None):
+  def __init__(self, reader, hi_ptr, lo_ptr, offset_ptr=None):
     self.high = int(hi_ptr, 0)
     self.low = int(lo_ptr, 0)
     try:
@@ -141,7 +141,7 @@ class HiLoStackResolver:
   stack_ptr_lo = None
   info = ''
 
-  def __init__(self, stack_ptr_hi, stack_ptr_lo, stack_head_ptr):
+  def __init__(self, reader, stack_ptr_hi, stack_ptr_lo, stack_head_ptr):
 
     self.stack_ptr_hi = int(stack_ptr_hi, 0)
     self.stack_ptr_lo = int(stack_ptr_lo, 0)
@@ -185,6 +185,7 @@ class TableResolver:
 
   def __init__(
     self,
+    reader,
     data_table_ptr,
     data_index_ptr,
     data_offset_ptr,
@@ -258,6 +259,7 @@ class OrderTableResolver:
 
   def __init__(
     self,
+    reader,
     order_table_ptr,
     data_table_ptr,
     order_index_ptr,
