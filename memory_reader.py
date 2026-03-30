@@ -54,7 +54,7 @@ class Memory:
     return int.from_bytes((self[address]+self[address + stride]), 'big')
 
   # Used on x86 CPUs in 16-bit mode
-  def paragraph(self, address):
+  def segment(self, address):
     return int.from_bytes(self[address:address+2], 'little') << 4
 
   def dword_le(self, address):
@@ -129,16 +129,17 @@ class MemoryReadV(Memory):
 class Pointer():
   # Shorthands that will be passed into kind argument
   mapping = {
-    'b': 'byte',
-    'w': 'word_le',  'W': 'word_be',
-    'v': 'vword_le', 'V': 'vword_be',
-    'd': 'dword_le', 'D': 'dword_be',
-    'q': 'qword_le', 'Q': 'qword_be',
-    'p': 'paragraph',
+    'b': ('byte',     '{:02x}'),
+    'w': ( 'word_le', '{:02x}'), 'W': ( 'word_be', '{:02x}'),
+    'v': ('vword_le', '{:02x}'), 'V': ('vword_be', '{:02x}'),
+    'd': ('dword_le', '{:04x}'), 'D': ('dword_be', '{:04x}'),
+    'q': ('qword_le', '{:08x}'), 'Q': ('qword_be', '{:08x}'),
+    's': ('segment',  '{:05x}'),
   }
 
   last_value = None
   reader_func = None
+  fmt = '{:x}'
 
   def __init__(self, reader, address_str, *args, default_kind="w", **kwargs):
 
@@ -151,10 +152,13 @@ class Pointer():
     # but this means I can't pass these as normal arguments. For now, it's only stride for vword, use autoint
     extra = [int_autobase(x) for x in spec[2:]]
 
+    attr, fmt = self.mapping[kind]
+
     # Pre-bake resolver function
-    bound = getattr(reader, self.mapping[kind])
+    bound = getattr(reader, attr)
     func = partial(bound, address, *extra)  # extra args needed by e.g. vword readers
     self.reader_func = func
+    self.fmt = fmt
 
   def __invert__(self):
     '''Using ~pointer instead of pointer() will return last read value

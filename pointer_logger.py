@@ -151,8 +151,8 @@ def main():
 
   # Print some settings
   print(
-    'RAM:  0x{:x}\n'.format(args.ram_ptr) +
-    'ROM:  0x{:x}\n'.format(args.data_ptr) +
+    'RAM: 0x{:x}\n'.format(args.ram_ptr) +
+    'ROM: 0x{:x}\n'.format(args.data_ptr) +
     '{:s}: {:s}\n'.format(args_dict['resolve_method'].upper(),
                           args_dict['resolver_settings']) +
     '═'*term_w)

@@ -2,11 +2,9 @@ import argparse
 import re
 
 from resolvers import (
-  HiLoResolver,
-  WordResolver,
+  PointerResolver,
   WordStackResolver,
   HiLoStackResolver,
-  DwordResolver,
   TableResolver,
   OrderTableResolver,
 )
@@ -69,25 +67,12 @@ class CustomFormatter(
 
 
 RESOLVER_MAP = {
-  'word': (
-    WordResolver,
-    'Read single 16-pointer from memory and\n'
-    '  optionally offset it by 8-bit index.\n'
-    '    Format: POINTER[:FLAGS:INDEX], e.g. 0xfc::0xfe\n'
-    '    Flags: b - pointer is Big Endian\n'),
-
-  'dword': (
-    DwordResolver,
-    'Read single 32-pointer from memory and\n'
-    '  optionally offset it by 8-bit index.\n'
-    '    Format: POINTER[:FLAGS:INDEX], e.g. 0xfc::0xfe\n'
-    '    Flags: b - pointer is Big Endian\n'),
-
-  'hilo': (
-    HiLoResolver,
-    'Read 2 16-bit pointers from separate\n'
-    '  memory locations.\n'
-    '    Format: HI_BYTE_PTR:LO_BYTE_PTR e.g. 0x324:0x314\n'),
+  'ptr': (
+    PointerResolver,
+    'Read single pointer, optionally add offset it by index.\n'
+    '    Format: POINTER[:INDEX][:FLAGS], e.g. 0xfc,v,5:0xfe\n'
+    '    Flags: m - Combine offset and pointer address in output'
+    '    Defaults: pointer: w , index: b\n'),
 
   'table': (
     TableResolver,
@@ -155,7 +140,7 @@ def get_parser():
          '  @ - resolve actual address from this pointer\n'
          '  q - pointer is 64 bits (default)\n'
          '  d - pointer is 32 bits\n'
-         '  + - add this offset to actual or resolved address\n'
+         '  + - add this much after resolving address OR add offset static pointer\n'
          'Example: @0x1025100,d+0x100\n')
 
   resolver_help = '\n'.join(
@@ -167,10 +152,17 @@ def get_parser():
   parser.add_argument(
     '-M', '--resolve-method',
     type=str,
-    default='word',
+    default='ptr',
     choices=RESOLVER_MAP,
-    help=f'Function to resolve driver-specific data into memory offset:\n'
-         + resolver_help)
+    help='Class for resolving driver-specific data into memory offset.\n'
+        + resolver_help + (
+        '\nAll pointer values support configurable TYPE:\n'
+        'ADDRESS[,TYPE][,TYPE_ARGS] where type is one of:\n'
+        'b - 8-bit Word; p - x86 Paragraph; w/W - 16-bit Word in LE or BE\n'
+        'v/V{,STRIDE} - 16-bit LE/BE word with components STRIDE bytes apart\n'
+        'd/D - 32-bit Word in LE or BE; q/Q - 64-bit Word in LE or BE\n'
+        'Example: 0x700,v,8 - LE word with low byte at 0x700 and hi at 0x708\n\n'
+        ))
 
   parser.add_argument(
     '-P', '--printer-class',

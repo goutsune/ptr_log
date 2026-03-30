@@ -3,7 +3,7 @@
 
 from memory_reader import Pointer
 
-class WordResolver:
+class PointerResolver:
   ''' Single pointer value resolver + dynamic offset.
   We have static or dynamic track start value and driver optionally stores offset into it.
   The pointer is stored as LE word at specified memory location and index is a byte.
@@ -11,30 +11,31 @@ class WordResolver:
 
   base_ptr = None
   offset_ptr = None
-  big_endian = False
-  offset_is_word = False
-  pointer_is_paragraph = False
+  merge_print = None
   info = ''
 
-  def __init__(self, reader, base, offset=''):
+  def __init__(self, reader, base, offset='', flags=''):
     self.base_ptr = Pointer(reader, base)
-    try:
-      self.offset_ptr = Pointer(reader, offset)
-    except ValueError:
-      pass
+
+    try: self.offset_ptr = Pointer(reader, offset, default_kind='b')
+    except ValueError: pass
+
+    self.merge_print = 'm' in flags
 
   def __call__(self, memory, _):
 
-    base = self.base_ptr()
+    addr = self.base_ptr()
 
     if self.offset_ptr is not None:
       offset = self.offset_ptr()
-      self.info = '{:04X}:{:02X}'.format(base, offset)
-    else:
-      offset = 0
-      self.info = '{:04X}'.format(base)
+      addr += self.offset_ptr()
 
-    return base + offset
+    if self.offset_ptr is None or self.merge_print:
+      self.info = self.base_ptr.fmt.format(addr)
+    else:
+      self.info = f'{self.base_ptr.fmt}:{self.offset_ptr.fmt}'.format(~self.base_ptr, offset)
+
+    return addr
 
 
 class WordStackResolver:
@@ -60,66 +61,6 @@ class WordStackResolver:
     self.info = '{:04X},{:02X}'.format(data_ptr, stack_head)
 
     return data_ptr
-
-
-class DwordResolver(WordResolver):
-  '''Same as word resolver, but we have 32 bits to deal with.
-  '''
-
-  def __call__(self, memory, _):
-
-    if self.big_endian: base = memory.dword_be(self.base_ptr)
-    else: base = memory.dword_le(self.base_ptr)
-
-    if self.offset_ptr is not None:
-      offset = memory.byte(self.offset_ptr)
-      self.info = '{:08X}+{:02X}'.format(base, offset)
-    else:
-      offset = 0
-      self.info = '{:08X}'.format(base)
-
-    return base + offset
-
-
-class HiLoResolver:
-  ''' Lo + Hi byte pointer resolver.
-  A very common case, we have non-linear memory location for 16-bit pointer.
-  It will take pointer offsets for those 2 bytes, read these byte values
-  from code segment and combine them.
-  '''
-
-  high = None
-  low = None
-  offset_ptr = None
-  info = ''
-
-  def __init__(self, reader, hi_ptr, lo_ptr, offset_ptr=None):
-    self.high = int(hi_ptr, 0)
-    self.low = int(lo_ptr, 0)
-    try:
-      self.offset_ptr = int(offset_ptr, 0)
-    except TypeError:
-      pass
-
-  def __call__(self, memory, _):
-
-    hi_addr = memory.byte(self.high) << 8
-    lo_addr = memory.byte(self.low)
-
-    if self.offset_ptr is not None:
-      offset = memory.byte(self.offset_ptr)
-    else:
-      offset = 0
-
-
-    address = hi_addr + lo_addr + offset
-
-    if self.offset_ptr is not None:
-      self.info = '{:04X}+{:02X}'.format(hi_addr + lo_addr, offset)
-    else:
-      self.info = '{:04X}'.format(address)
-
-    return address
 
 
 class HiLoStackResolver:
