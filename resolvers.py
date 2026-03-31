@@ -2,6 +2,7 @@
 '''
 
 from memory_reader import Pointer
+from util import int_autobase
 
 class PointerResolver:
   ''' Single pointer value resolver + dynamic offset.
@@ -22,7 +23,7 @@ class PointerResolver:
 
     self.merge_print = 'm' in flags
 
-  def __call__(self, memory, _):
+  def __call__(self, _memory, _data):
 
     addr = self.base_ptr()
 
@@ -38,57 +39,43 @@ class PointerResolver:
     return addr
 
 
-class WordStackResolver:
+class StackResolver:
   ''' Single pointer located at stack offset counting from the stack base
   '''
 
-  stack_ptr = None
-  stack_head_ptr = None
+  stack = None
+  stack_head = None
+  shift = None
+  low = None
+  high = None
+  direction = None
+  conditional_shift = False
   info = ''
 
-  def __init__(self, reader, stack_ptr, stack_head_ptr):
+  def __init__(self, reader, stack, depth, flags='', shift='0', low=None, high=None):
 
-    self.stack_ptr = int(stack_ptr, 0)
-    self.stack_head_ptr = int(stack_head_ptr, 0)
-
-  def __call__(self, memory, _):
-
-    stack_head = memory.byte(self.stack_head_ptr)
-    data_ptr = memory.word_le(self.stack_ptr + stack_head)
-    if data_ptr < 0xc000 or data_ptr > 0xd000:
-      data_ptr = memory.word_le(self.stack_ptr + stack_head+1)
-
-    self.info = '{:04X},{:02X}'.format(data_ptr, stack_head)
-
-    return data_ptr
+    self.stack = Pointer(reader, stack, 'w')
+    self.depth = Pointer(reader, depth, 'b')
+    self.shift = int_autobase(shift)
+    self.direction = -1 if 'n' in flags else +1
+    if low is not None and high is not None:
+      self.low  = int_autobase(low)
+      self.high = int_autobase(high)
+      self.conditional_shift = True
 
 
-class HiLoStackResolver:
-  ''' Single pointer located at stack offset counting from the stack base.
-  Pointer is in hilo format.
-  '''
+  def __call__(self, _memory, _data):
 
-  stack_head_ptr = None
-  stack_ptr_hi = None
-  stack_ptr_lo = None
-  info = ''
+    if self.conditional_shift:
+      ptr = self.stack(self.stack.address + self.depth()*self.direction)
+      if ptr < self.low or ptr > self.high:
+        ptr = self.stack(self.stack.address + self.depth()*self.direction + self.shift)
+    else:
+      ptr = self.stack(self.stack.address + self.depth()*self.direction + self.shift)
 
-  def __init__(self, reader, stack_ptr_hi, stack_ptr_lo, stack_head_ptr):
+    self.info = f'{self.stack.fmt},{self.depth.fmt}'.format(ptr, ~self.depth)
 
-    self.stack_ptr_hi = int(stack_ptr_hi, 0)
-    self.stack_ptr_lo = int(stack_ptr_lo, 0)
-    self.stack_head_ptr = int(stack_head_ptr, 0)
-
-  def __call__(self, memory, _):
-
-    stack_head = memory.byte(self.stack_head_ptr)
-    data_ptr = memory.vword_le(self.stack_ptr_lo+stack_head, self.stack_ptr_hi-self.stack_ptr_lo)
-#    if data_ptr < 0xc000 or data_ptr > 0xd000:
-#      data_ptr = memory.word_le(self.stack_ptr + stack_head+1)
-
-    self.info = '{:04X},{:02X}'.format(data_ptr, stack_head)
-
-    return data_ptr
+    return ptr
 
 
 class TableResolver:

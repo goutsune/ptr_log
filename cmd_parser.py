@@ -3,8 +3,7 @@ import re
 
 from resolvers import (
   PointerResolver,
-  WordStackResolver,
-  HiLoStackResolver,
+  StackResolver,
   TableResolver,
   OrderTableResolver,
 )
@@ -93,14 +92,13 @@ RESOLVER_MAP = {
     '    Flags: W - Offset is word, o - Print final offset in info\n'),
 
   'stack': (
-    WordStackResolver,
-    'Read single 16-pointer referenced at sequencer stack.\n'
-    '    Format: STACK:HEAD, e.g. 0x5ba:0x528\n'),
-
-  'stackhl': (
-    HiLoStackResolver,
-    'Read single 16-pointer referenced at sequencer stack.\n'
-    '    Format: STACKH:STACKL:HEAD, e.g. 0x5ca:0x5ba:0x528\n'),
+    StackResolver,
+    'Read data inside stack pointer that is offset by stack depth\n'
+    '    Format: STACK:DEPTH[:FLAGS][:SHIFT][:LOW:HIGH], e.g. 0x5ba:0x528::1\n'
+    '    Flags: n - substract from stack location instead of adding\n'
+    '    SHIFT: Offset pointer by this many bytes. Useful when reference\n'
+    '           points at loop counter followed by pointer\n'
+    '    LOW/HIGH: Discards memory locations outside specified region\n'),
 }
 
 PRINTER_MAP = {

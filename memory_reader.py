@@ -137,8 +137,11 @@ class Pointer():
     's': ('segment',  '{:05x}'),
   }
 
-  last_value = None
-  reader_func = None
+  value = None
+  partial = None
+  reader = None
+  address = None
+  extra = None
   fmt = '{:x}'
 
   def __init__(self, reader, address_str, *args, default_kind="w", **kwargs):
@@ -157,8 +160,13 @@ class Pointer():
     # Pre-bake resolver function
     bound = getattr(reader, attr)
     func = partial(bound, address, *extra)  # extra args needed by e.g. vword readers
-    self.reader_func = func
+    self.partial = func
     self.fmt = fmt
+
+    # In case we have to dynamically adjust address on the fly
+    self.reader = bound
+    self.address = address
+    self.extra = extra
 
   def __invert__(self):
     '''Using ~pointer instead of pointer() will return last read value
@@ -166,6 +174,9 @@ class Pointer():
     '''
     return self.value
 
-  def __call__(self):
-    self.value = self.reader_func()
+  def __call__(self, addr=None):
+
+    if addr is None: self.value = self.partial()
+    else: self.value = self.reader(addr, *self.extra)
+
     return self.value
