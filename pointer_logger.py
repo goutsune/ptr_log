@@ -85,7 +85,7 @@ def mainloop(filename, ram_ptr, data_ptr, resolve_method, resolver_settings, shi
     stdout.write('\033[2K\r')
 
     # Print what we have gathered from this pass
-    prefix = f'{GOLD}{old_info}{GRAY}{diff:+5X}{RESET}'
+    prefix = f'{GOLD}{old_info}{GRAY}{diff:+5x}{RESET}'
     for idx, row in enumerate(printer.result):
       if idx:
         prefix = blanks

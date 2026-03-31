@@ -130,8 +130,8 @@ class Pointer():
   # Shorthands that will be passed into kind argument
   mapping = {
     'b': ('byte',     '{:02x}'),
-    'w': ( 'word_le', '{:02x}'), 'W': ( 'word_be', '{:02x}'),
-    'v': ('vword_le', '{:02x}'), 'V': ('vword_be', '{:02x}'),
+    'w': ( 'word_le', '{:04x}'), 'W': ( 'word_be', '{:04x}'),
+    'v': ('vword_le', '{:04x}'), 'V': ('vword_be', '{:04x}'),
     'd': ('dword_le', '{:04x}'), 'D': ('dword_be', '{:04x}'),
     'q': ('qword_le', '{:08x}'), 'Q': ('qword_be', '{:08x}'),
     's': ('segment',  '{:05x}'),
