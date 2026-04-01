@@ -214,7 +214,7 @@ class MappedPrinter(HexPrinter):
         fmt = '0x{:x}' if 'h' in pflags else '{:d}'
         signature_length += length
 
-        parser = lambda x: fmt.format(int.from_bytes(x, byteorder=endianess, signed=signed))
+        parser = lambda x, f=fmt, e=endianess, s=signed: f.format(int.from_bytes(x, byteorder=e, signed=s))
 
         parameter = SimpleNamespace(
           name=param_name,
