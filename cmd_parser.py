@@ -95,10 +95,11 @@ RESOLVER_MAP = {
     StackResolver,
     'Read data inside stack pointer that is offset by stack depth\n'
     '    Format: STACK:DEPTH[:FLAGS][:SHIFT][:LOW:HIGH], e.g. 0x5ba:0x528::1\n'
-    '    Flags: n - substract from stack location instead of adding\n'
+    '    Defaults: stack: w , depth: b\n'
+    '    Flags: n - substract depth value instead of adding\n'
     '    SHIFT: Offset pointer by this many bytes. Useful when reference\n'
     '           points at loop counter followed by pointer\n'
-    '    LOW/HIGH: Discards memory locations outside specified region\n'),
+    '    LOW/HIGH: Shift only if discovered pointer is outside this region\n'),
 }
 
 PRINTER_MAP = {
@@ -131,7 +132,7 @@ def get_parser():
   parser.add_argument(
     'ram_ptr',
     type=parse_addr,
-    help='Emulator/player RAM offset used for analysis.\n'
+    help='Emulator/Player/Program RAM offset used for analysis.\n'
          'Should point to internal address 0x0 or segment start\n'
          'Format: [@]0x123123[,d|q][+offset]\n'
          '  @ - resolve actual address from this pointer\n'
@@ -186,7 +187,7 @@ def get_parser():
   parser.add_argument(
     '-r', '--data-ptr',
     type=parse_addr,
-    help='Use this memory location to read data segment, same format as ram_ptr')
+    help='Memory location to read data segment')
   parser.add_argument(
     '-j', '--jump-threshold',
     type=int_autobase,
@@ -205,6 +206,6 @@ def get_parser():
     '-f', '--frequency',
     type=int_autobase,
     default=120,
-    help='Pointer refresh frequency in Hz')
+    help='Polling rate in Hz')
 
   return parser

@@ -2,7 +2,7 @@
 
 
 ```
-usage: pointer_logger.py [-h] [-M {ptr,table,order,stack,stackhl}]
+usage: pointer_logger.py [-h] [-M {ptr,table,order,stack}]
                          [-P {hex,bar,line,map}] [-p PRINTER_SETTINGS]
                          [-e SHIFT] [-r DATA_PTR] [-j JUMP_THRESHOLD]
                          [-l PREVIEW] [-b] [-f FREQUENCY]
@@ -14,7 +14,7 @@ positional arguments:
   filename
         Memory file to read from (can be mmap too)
   ram_ptr
-        Emulator/player RAM offset used for analysis.
+        Emulator/Player/Program RAM offset used for analysis.
         Should point to internal address 0x0 or segment start
         Format: [@]0x123123[,d|q][+offset]
           @ - resolve actual address from this pointer
@@ -30,14 +30,14 @@ positional arguments:
 options:
   -h, --help
         show this help message and exit
-  -M {ptr,table,order,stack,stackhl}, --resolve-method {ptr,table,order,stack,stackhl}
+  -M {ptr,table,order,stack}, --resolve-method {ptr,table,order,stack}
         Class for resolving driver-specific data into memory offset.
         ptr: Read single pointer, optionally add offset it by index.
             Format: POINTER[:INDEX][:FLAGS], e.g. 0xfc,v,5:0xfe
             Flags: m - Combine offset and pointer address in output
             Defaults: pointer: w , index: b
 
-        table: Get the data pointer from lookup table, 
+        table: Get the data pointer from lookup table,
           index in this table and offset inside that data index.
           Table is assumed to contain WORD LE pointers.
             Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:FLAGS]
@@ -51,11 +51,13 @@ options:
             Format: ORDER_TABLE:DATA_TABLE:ORDER_INDEX:OFFSET_POINTER[:FLAGS]
             Flags: W - Offset is word, o - Print final offset in info
 
-        stack: Read single 16-pointer referenced at sequencer stack.
-            Format: STACK:HEAD, e.g. 0x5ba:0x528
-
-        stackhl: Read single 16-pointer referenced at sequencer stack.
-            Format: STACKH:STACKL:HEAD, e.g. 0x5ca:0x5ba:0x528
+        stack: Read data inside stack pointer that is offset by stack depth
+            Format: STACK:DEPTH[:FLAGS][:SHIFT][:LOW:HIGH], e.g. 0x5ba:0x528::1
+            Defaults: stack: w , depth: b
+            Flags: n - substract depth value instead of adding
+            SHIFT: Offset pointer by this many bytes. Useful when reference
+                   points at loop counter followed by pointer
+            LOW/HIGH: Shift only if discovered pointer is outside this region
 
         All pointer values support configurable TYPE:
             ADDRESS[,TYPE][,TYPE_ARGS] where type is one of:
@@ -77,7 +79,7 @@ options:
   -e SHIFT, --shift SHIFT
         Globally add this offset when doing lookup (default: 0)
   -r DATA_PTR, --data-ptr DATA_PTR
-        Use this memory location to read data segment, same format as ram_ptr (default: None)
+        Memory location to read data segment (default: None)
   -j JUMP_THRESHOLD, --jump-threshold JUMP_THRESHOLD
         Threshold for detecting forward jumps. (default: 16)
   -l PREVIEW, --preview PREVIEW
@@ -85,5 +87,6 @@ options:
   -b, --look-behind
         Print values before new pointer after jump (default: False)
   -f FREQUENCY, --frequency FREQUENCY
-        Pointer refresh frequency in Hz (default: 120)
+        Polling rate in Hz (default: 120)
+
 ```
