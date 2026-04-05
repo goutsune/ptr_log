@@ -1,6 +1,7 @@
 import re
 import json
 from types import SimpleNamespace as SN
+from functools import partial
 
 # Pre-cook suffixes
 from consts import BRED, BBLUE, GRAY, GOLD, RESET
@@ -167,6 +168,14 @@ class MappedPrinter(HexPrinter):
   cmd_buckets_high = None
   parse_preview = False
 
+  @staticmethod
+  def _format_command_parameter(stream, fmt, byteorder, signed):
+    return fmt.format(
+      int.from_bytes(
+        stream,
+        byteorder=byteorder,
+        signed=signed))
+
   def parse_configuration(self, cfg):
     # Parse note range
     if 'notes' in cfg:
@@ -193,6 +202,7 @@ class MappedPrinter(HexPrinter):
     #  b - parameter is unsigned byte (default)
     #  s - parameter is signed byte
     #  w - parameter is unsigned LE word
+    #  h - format as hex instead of decimal
 
     commands = {}  # Command map by command code
     cmd_buckets = {}  # Also command map by command code, also grouped by argument length
@@ -218,15 +228,17 @@ class MappedPrinter(HexPrinter):
 
         length = 2 if 'w' in pflags else 1
         signed = True if 's' in pflags else False
-        endianess = 'big' if 'B' in pflags else 'little'
+        byteorder = 'big' if 'B' in pflags else 'little'
         fmt = '0x{:x}' if 'h' in pflags else '{:d}'
         signature_length += length
 
-        parser = lambda x, f=fmt, e=endianess, s=signed: f.format(int.from_bytes(x, byteorder=e, signed=s))
-
-        parameter = SimpleNamespace(
+        parameter = SN(
           name=param_name,
-          parser=parser,
+          parser=partial(
+            self._format_command_parameter,
+            fmt=fmt,
+            byteorder=byteorder,
+            signed=signed),
           length=length)
 
         parameters.append(parameter)
