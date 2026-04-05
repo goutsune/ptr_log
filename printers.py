@@ -1,6 +1,6 @@
 import re
 import json
-from types import SimpleNamespace
+from types import SimpleNamespace as SN
 
 # Pre-cook suffixes
 from consts import BRED, BBLUE, GRAY, GOLD, RESET
@@ -160,20 +160,28 @@ class LinePrinter(HexPrinter):
 
 class MappedPrinter(HexPrinter):
 
-  note_prefixes = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-']
-  note_lo = None
-  note_hi = None
-  drum_lo = None
-  drum_hi = None
+  ranges = None
+  notes = None
   commands = None
   cmd_buckets = None
   cmd_buckets_high = None
   parse_preview = False
 
   def parse_configuration(self, cfg):
-    # Parse note and drum ranges
-    self.note_lo, self.note_hi = [int(x, 0) for x in cfg['notes']]
-    self.drum_lo, self.drum_hi = [int(x, 0) for x in cfg['drums']]
+    # Parse note range
+    if 'notes' in cfg:
+      self.notes = SN(
+        lo=int(cfg['notes']['lo'], 0),
+        hi=int(cfg['notes']['hi'], 0),
+        prefixes=cfg['notes']['prefixes'],
+        length=len(cfg['notes']['prefixes']))
+
+    if 'ranges' in cfg:
+      self.ranges = [SN(
+        name=k,
+        lo=int(v[0], 0),
+        hi=int(v[1], 0))
+        for k, v in cfg['ranges'].items()]
 
     # Parse command grammar. Base format looks like this:
     # <code>: <"disp_name[,rflags]", [param1[,pflags], ..., paramN[,pflags]]>
@@ -223,7 +231,7 @@ class MappedPrinter(HexPrinter):
 
         parameters.append(parameter)
 
-      command = SimpleNamespace(
+      command = SN(
         name=disp_name,
         is_final=is_final,
         is_property=is_property,
@@ -255,20 +263,40 @@ class MappedPrinter(HexPrinter):
     self.parse_configuration(cfg)
 
   def note(self, value):
-    if value > self.note_hi or value < self.note_lo:
+    '''Find and tokenize note with octave, lo and high values are INCLUSIVE.
+    '''
+    if self.notes is None:
       return None
 
-    note = value - self.note_lo
-    return '{}{}'.format(
-      self.note_prefixes[note % 12],
-      note // 12)
-
-  def drum(self, value):
-    if value > self.drum_hi or value < self.drum_lo:
+    if value >= self.notes.hi or value <= self.notes.lo:
       return None
 
-    drum = value - self.drum_lo
-    return 'drum({:02d})'.format(drum)
+    # Remove command offset
+    n = value - self.notes.lo
+
+    return '{note}{octave}'.format(
+      note=self.notes.prefixes[n % self.notes.length],
+      octave=n // self.notes.length)
+
+  def ranged(self, value):
+    '''Find and tokenize single range parameter, lo and high values are INCLUSIVE.
+    '''
+    if self.ranges is None:
+      return None
+
+    range_def = None
+
+    for candidate in self.ranges:
+      if value <= candidate.hi and value >= candidate.lo:
+        range_def = candidate
+        break
+
+    if range_def is None:
+      return None
+
+    # Remove command offset
+    n = value - range_def.lo
+    return '{}({:02d})'.format(range_def.name, n)
 
   def command(self, bucket, values):
     '''Tokenizer for single vcmd.
@@ -357,9 +385,9 @@ class MappedPrinter(HexPrinter):
           tokens = tokens[1:] if direction else tokens[:-1]
           to_process -= 1
 
-      # Finally as drum
+      # Finally as a range
       if line is None:
-        line = self.drum(tokens[0] if direction else tokens[-1])
+        line = self.ranged(tokens[0] if direction else tokens[-1])
 
         if line:
           tokens = tokens[1:] if direction else tokens[:-1]
@@ -375,9 +403,9 @@ class MappedPrinter(HexPrinter):
         # For tails, append them to last print result instead of adding new line
         if vcmd and vcmd.is_tail and result:
           if direction:
-            result[-1] += f", {line}"
+            result[-1] += f', {line}'
           else:
-            result[0] += f", {line}"
+            result[0] += f', {line}'
         else:
           result.append(line) if direction else result.insert(0, line)
       else:

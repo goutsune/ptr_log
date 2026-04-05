@@ -1,6 +1,12 @@
 {
-  "notes": ["0x00", "0x7f"],
-  "drums": ["0xb0", "0xcf"],
+  "notes": {
+    "lo": "0x00",
+    "hi": "0x7f",
+    "prefixes": ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"]
+  },
+  "ranges": {
+    "drum": ["0xb0", "0xcf"]
+  },
   "commands" : {
     "0x80": ["jAddr,e", "addr,w"],
     "0x81": ["jIfNCycl,e", "", "addr,w"],
