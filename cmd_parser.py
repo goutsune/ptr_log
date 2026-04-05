@@ -42,7 +42,7 @@ def parse_addr(tokens):
     r'(@)?'                          # is this a pointer to addr?
     r'((?:0x)?[0-9a-fA-F]+)'         # what's the addr?
     r'(?:,([dq]))?'                  # is this dword or qword?
-    r'(?:\+((?:0x)?[0-9a-fA-F]+))?'  # add some more bytes to that addr?
+    r'([+-](?:0x)?[0-9a-fA-F]+)?'  # add some more bytes to that addr?
   )
   result = re.match(regex, tokens)
   resolve, addr, width, offset = result.groups()
@@ -134,11 +134,11 @@ def get_parser():
     type=parse_addr,
     help='Emulator/Player/Program RAM offset used for analysis.\n'
          'Should point to internal address 0x0 or segment start\n'
-         'Format: [@]0x123123[,d|q][+offset]\n'
+         'Format: [@]0x123123[,d|q][[+-]offset]\n'
          '  @ - resolve actual address from this pointer\n'
          '  q - pointer is 64 bits (default)\n'
          '  d - pointer is 32 bits\n'
-         '  + - add this much after resolving address OR add offset static pointer\n'
+         '  +/- - add this much after resolving address OR add offset to static pointer\n'
          'Example: @0x1025100,d+0x100\n')
 
   resolver_help = '\n'.join(
