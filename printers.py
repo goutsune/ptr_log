@@ -280,7 +280,7 @@ class MappedPrinter(HexPrinter):
     if self.notes is None:
       return None
 
-    if value >= self.notes.hi or value <= self.notes.lo:
+    if value > self.notes.hi or value < self.notes.lo:
       return None
 
     # Remove command offset
