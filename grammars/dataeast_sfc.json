@@ -1,0 +1,50 @@
+{
+  "notes": {
+    "lo": "0x80",
+    "hi": "0xc8",
+    "prefixes": ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"]
+  },
+  "ranges": {
+    "step": ["0x00", "0x50"],
+    "velo": ["0x51", "0x7f"]
+  },
+  "commands" : {
+
+    "0x00": ["endPhr,e"],
+    "0xc8": ["cont,p"],
+    "0xc9": ["===,p"],
+
+    "0xe0": ["setInstr", ""],
+    "0xe1": ["setPan", ""],
+    "0xe2": ["slidePan", "tps", ",h"],
+    "0xe3": ["setVib", "d", "s", "l"],
+    "0xe4": ["disVibr"],
+    "0xe5": ["setGlVol", ""],
+    "0xe6": ["glVolSlide", "rps", "trgt"],
+    "0xe7": ["setSpeed", ""],
+    "0xe8": ["slideTempo", "tps", "t"],
+    "0xe9": ["setGlTransp", ""],
+    "0xea": ["setTransp", ""],
+    "0xeb": ["setTremolo", "d", "s", "l"],
+    "0xec": ["disTremolo"],
+    "0xed": ["setTrackVol", ""],
+    "0xee": ["volSlide", "tps", "trgt"],
+    "0xef": ["stJump,e", ",wh", "l"],
+    "0xf0": ["setVibFade", ",h"],
+    "0xf1": ["setModEnv", "d", "tps", "add"],
+    "0xf2": ["setModEnvAbs", "d", "tps", "n"],
+    "0xf3": ["disPbend"],
+    "0xf4": ["setFinetune", ""],
+    "0xf5": ["setEchoVol", "mask,h", "l,s", "r,s"],
+    "0xf6": ["disableEcho"],
+    "0xf7": ["setEcho", "t", "fb", "fir"],
+    "0xf8": ["slideEcho", "tps", "l", "r"],
+    "0xf9": ["sweep", "d", "tps", "n"],
+    "0xfa": ["setDrumOfs?", ",h"],
+    "0xfb": ["halt0", ",h", ",h"],
+    "0xfc": ["halt1"],
+    "0xfd": ["halt2"],
+    "0xfe": ["halt3"],
+    "0xff": ["callSubVcmd", "n", "", ""]
+  }
+}
