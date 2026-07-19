@@ -48,10 +48,16 @@ def mainloop(filename, ram_ptr, data_ptr, resolve_method, resolver_settings, shi
   next_time = time.perf_counter()
 
   # Print preview line from the current location
-  printer(PREV, data[ptr:ptr + preview])
-  stdout.write(
-    f'{GRAY}{info}   **{RESET}│'
-    f'{printer.prefix}{printer.result[0]}{printer.suffix}')
+  try:
+    printer(PREV, data[ptr: ptr+preview])
+
+    stdout.write(
+      f'{GRAY}{info}   **{RESET}│'
+      f'{printer.prefix}{printer.result[0]}{printer.suffix}')
+  except IndexError:
+    stdout.write(
+      f'{GRAY}{info}   **{RESET}│  '
+      f'{GRAY}Oops!{printer.suffix}')
 
   while True:
 
@@ -108,10 +114,16 @@ def mainloop(filename, ram_ptr, data_ptr, resolve_method, resolver_settings, shi
           f'{printer.prefix}{row}{printer.suffix}\n')
 
     # Print preview line from the current location
-    printer(PREV, data[ptr: ptr+preview])
-    stdout.write(
-      f'{GRAY}{info}   **{RESET}│'
-      f'{printer.prefix}{printer.result[0]}{printer.suffix}')
+    try:
+      printer(PREV, data[ptr: ptr+preview])
+
+      stdout.write(
+        f'{GRAY}{info}   **{RESET}│'
+        f'{printer.prefix}{printer.result[0]}{printer.suffix}')
+    except IndexError:
+      stdout.write(
+        f'{GRAY}{info}   **{RESET}│  '
+        f'{GRAY}Oops!{printer.suffix}')
 
     old_ptr = ptr
 
