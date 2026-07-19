@@ -87,6 +87,7 @@ class HexPrinter:
     self.suffix = RESET
     self.action = action
     self.result = self.format_tokens(tokens)
+    self.jump_addr = None
 
     # On detected jump, let's see if track end sequence is within lookup area
     if (action == FJMP or action == BJMP) and self.end_patterns:
