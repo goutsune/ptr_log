@@ -465,3 +465,182 @@ class MappedPrinter(HexPrinter):
     # Backward lookup on jump
     elif action == LKUP:
       self.prefix = LKUP_PFX
+
+
+class FushigiPrinter(HexPrinter):
+  NOTES = ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"]
+
+  def __init__(self, *args, **kwargs):
+
+    self.note_masks = [x for x in range (0b10_000000, 0b11_000000)]
+    self.wait_masks = [x for x in range (0b11_000000, 0b11_010000)]
+    self.mask = 0
+
+    return super().__init__(*args, **kwargs)
+
+  def _format_note(self, val):
+
+    if val == 0xFF:
+      return "==="
+    if 0x00 <= val <= 0x7F:
+      return f"{self.NOTES[val % 12]}{val // 12}"
+
+    return f"{val:02x} "
+
+  def _read_slice(self, tokens, start, length):
+      # Raise exception if we read less then supposed to
+      if start + length > len(tokens):
+        raise IndexError
+      return tokens[start : start+length]
+
+  def _apply_channel_mask(self, mask_byte, data_bytes, formatter_cb, empty_str="..."):
+    """
+    Generic mask processor.
+    Consumes bytes from data_bytes based on bits set in mask_byte.
+    """
+    channel_cols = []
+    consumed = 0
+
+    for i in range(1, 7):
+      if ((mask_byte << i) & 0x100) and consumed < len(data_bytes):
+        val = data_bytes[consumed]
+        channel_cols.append(formatter_cb(val))
+        consumed += 1
+      else:
+        channel_cols.append(empty_str)
+
+    return " ".join(channel_cols), consumed
+
+  def _masked_channel_cmd(self, mask, prefix, tokens):
+    return self._apply_channel_mask(
+      mask,
+      tokens,
+      lambda v: f'{prefix}{v:02X}'
+    )
+
+  def format_tokens(self, tokens):
+    if not tokens:
+      return []
+
+    result = []
+    idx = 0
+    mask = self.mask
+
+    while idx < len(tokens):
+      try:
+        cmd_byte = tokens[idx]
+        pref = cmd_byte & 0b11000000
+        cmd = cmd_byte & 0b00111111
+
+        match pref:
+
+          # Empty row
+          case 0b11_000000:
+            cols, _ = self._apply_channel_mask(0, [], None)
+            result.append(f'{cmd_byte:08b} {cols} *{cmd_byte&0b00_111111}')
+            idx += 1
+
+          # Note rows
+          case 0b10_000000:
+            note_mask = cmd_byte << 2 & 0xFF
+            cols, consumed = self._apply_channel_mask(
+              note_mask, tokens[idx+1:], self._format_note
+            )
+            result.append(f'{cmd_byte:08b} {cols}')
+            idx += 1 + consumed
+
+          # Full commands
+          case 0b00_000000 | 0b01_000000:
+
+            match cmd:
+
+              case 0x01 if pref == 0b00_000000: # Speed
+                result.append(f'{cmd_byte:08b} Speed={tokens[idx+1]}')
+                idx += 2
+
+              case 0x02 if pref == 0b00_000000: # Go to
+                addr = int.from_bytes(self._read_slice(tokens, idx+1, 2), 'big')
+                self.jump_addr = addr
+                result.append(f'{cmd_byte:08b} Goto {addr:X}h')
+                idx += 3
+
+              case 0x03 if pref == 0b00_000000: # Play phrase
+                addr = int.from_bytes(self._read_slice(tokens, idx+1, 2), 'big')
+                self.jump_addr = addr
+                result.append(f'{cmd_byte:08b} Call {addr:X}h')
+                idx += 3
+
+              case 0x04 if pref == 0b00_000000: # Loop
+                count = tokens[idx+1]
+                addr = int.from_bytes(self._read_slice(tokens, idx+2, 2), 'big')
+                self.jump_addr = addr
+                result.append(f'{cmd_byte:08b} Loop A {count} to {addr:X}h')
+                idx += 4
+
+              case 0x06 if pref == 0b00_000000: # Loop?
+                count = tokens[idx+1]
+                addr = int.from_bytes(self._read_slice(tokens, idx+2, 2), 'big')
+                self.jump_addr = addr
+                result.append(f'{cmd_byte:08b} Loop B {count} to {addr:X}h')
+                idx += 4
+
+              case 0x08 if pref == 0b00_000000: # Return / Stop
+                result.append(f'{cmd_byte:08b} BRK')
+                idx += 1
+
+              case 0x09 if pref == 0b00_000000: # Play Drum on Z80
+                result.append(f'{cmd_byte:08b} Sample={tokens[idx+1]}')
+                idx += 2
+
+              case 0x20 if pref == 0b00_000000: # Reset tracks
+                mask = tokens[idx+1]
+                cols = f'{mask >> 2:06b}'.replace('0', '... ').replace('1', '^^^ ')
+                result.append(f'{cmd_byte:08b} {cols}<- {cmd_byte:02X}h')
+                idx += 2
+
+              # Whatever these are will become apparent later
+              case 0x0b | 0x0c | 0x0d | 0x0e | 0x0f | 0x10 | 0x11 | 0x12 | 0x13 | 0x14 | 0x15:
+
+                # pref will be 0 for full cmd
+                mask = mask if pref else tokens[idx+1]
+                offset = 1 if pref else 2
+
+                name = chr(0x37 + cmd)
+                cols, consumed = self._masked_channel_cmd(
+                  mask, name, tokens[idx+offset:]
+                )
+                result.append(f'{cmd_byte:08b} {cols} {"%" if pref else ""}')
+                idx += offset + consumed
+
+              case _:
+                self.mask = mask  # Update global mask state
+                bin_head = f'{cmd_byte:08b}'
+                remainder = tokens[idx+1:]
+
+                if remainder:
+                  hex_chunks = [
+                    remainder[p : self.width+p].hex(' ')
+                    for p in range(0, len(remainder), self.width)
+                  ]
+                  result.append(f'{bin_head} {hex_chunks[0]} ${cmd_byte:02X}')
+                  result.extend(hex_chunks[1:])
+                else:
+                  result.append(bin_head)
+
+                break
+
+      except IndexError:
+        # Dump whatever is left at the playhead
+        remainder = tokens[idx:]
+
+        # Format the remaining garbage as hex
+        if isinstance(remainder, bytes) or isinstance(remainder, bytearray):
+          dump = remainder.hex(' ')
+        else:
+          dump = ' '.join(f'{b:02x}' for b in remainder)
+
+        result.append(f'{tokens[idx]:08b} {dump} <- TRNC')
+        break
+
+    self.mask = mask  # Update global mask state
+    return result

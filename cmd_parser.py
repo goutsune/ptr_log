@@ -13,6 +13,7 @@ from printers import (
   BarPrinter,
   LinePrinter,
   MappedPrinter,
+  FushigiPrinter,
 )
 
 from util import int_autobase
@@ -114,7 +115,11 @@ PRINTER_MAP = {
     'Hex printer extension, plots both positive and negative values'),
   'map': (
     MappedPrinter,
-    ' Prints parsed commands from definition file, falls back to hex\n')
+    ' Prints parsed commands from definition file, falls back to hex\n'),
+  'fushigi': (
+    FushigiPrinter,
+    ' Decoder for Fushigi no Umi no Nadia sequencer on SMD'
+  )
 }
 
 
