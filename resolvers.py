@@ -85,75 +85,51 @@ class TableResolver:
   in relation to this block.
   '''
 
-  data_table_ptr = None
-  data_table_stride = None
-  data_index_ptr = None
+  table_ptr = None
+  tbl_index_ptr = None
   data_offset_ptr = None
-  data_offset_size = None
-  # Useful when our offset table is vertical, causing lo and hi bytes to apart
-  data_index_stride = None
   info = ''
 
   # Extra flags for tinkering
   index_is_pointer = False  # Some drivers store data table offset directly, resolve as-is
-  index_is_word = False   # in case your index is 16 bit wide
-  offset_is_word = False  # in case your offset is 16 bit wide
   print_offset = False    # Display resulting addres for track data
-  table_ptr_be = False    # When step is given, assume first value is low byte
 
   def __init__(
     self,
     reader,
-    data_table_ptr,
-    data_index_ptr,
+    table_ptr,
+    tbl_index_ptr,
     data_offset_ptr,
-    data_table_stride=0,
     flags=''):
 
-    self.data_table_ptr = int(data_table_ptr, 0)
-    self.data_index_ptr = int(data_index_ptr, 0)
-    self.data_offset_ptr = int(data_offset_ptr, 0)
-    if data_table_stride:  # Branch on empty string
-      self.data_table_stride = int(data_table_stride, 0)
+    self.table_ptr = Pointer(reader, table_ptr, default_kind='w')
+    self.tbl_index_ptr = Pointer(reader, tbl_index_ptr, default_kind='b')
+    self.data_offset_ptr = Pointer(reader, data_offset_ptr, default_kind='b')
 
-    if 'w' in flags: self.index_is_word = True
-    if 'W' in flags: self.offset_is_word = True
     if 'd' in flags: self.index_is_pointer = True
     if 'o' in flags: self.print_offset = True
-    if 'B' in flags: self.table_ptr_be = True
 
   def __call__(self, memory, data):
-    # Get data index
-    if self.index_is_word: data_index = memory.word_le(self.data_index_ptr)
-    else: data_index = memory.byte(self.data_index_ptr)
+    # Get table index
+    table_index = self.tbl_index_ptr()
 
-    # In case our index points into "vertical" table of known size, we want to get lo and hi bytes separately.
-    if self.data_table_stride:
-      if self.table_ptr_be:
-        data_ptr = data.vword_be(self.data_table_ptr + data_index, self.data_table_stride)
-      else:
-        data_ptr = data.vword_le(self.data_table_ptr + data_index, self.data_table_stride)
-
-    # Otherwise proceed normally,
+    # Get data pointer
+    if self.index_is_pointer:
+      data_ptr = self.table_ptr(offset=table_index*2)
     else:
-      # Get data pointer
-      if self.index_is_pointer:
-        data_ptr = data.word_le(self.data_table_ptr + data_index)
-
-      # In this mode we assume it's index to word array, non-vertical
-      else:
-        data_ptr = data.word_le(self.data_table_ptr + data_index*2)
+      data_ptr = self.table_ptr(offset=table_index)
 
     # Get data offset
-    if self.offset_is_word: data_offset = memory.word_le(self.data_offset_ptr)
-    else: data_offset = memory.byte(self.data_offset_ptr)
+    data_offset = self.data_offset_ptr()
 
     command_offset = data_ptr + data_offset
 
+    self.info = f'{self.tbl_index_ptr.fmt},{self.data_offset_ptr.fmt}'.format(
+      table_index,
+      data_offset)
+
     if self.print_offset:
-      self.info = '{:02X},{:02X}:{:04X}'.format(data_index, data_offset, command_offset)
-    else:
-      self.info = '{:02X},{:02X}'.format(data_index, data_offset)
+      self.info += ':{:04X}'.format(command_offset)
 
     return command_offset
 

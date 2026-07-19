@@ -80,8 +80,8 @@ RESOLVER_MAP = {
     '  index in this table and offset inside that data index.\n'
     '  Table is assumed to contain WORD LE pointers.\n'
     '    Format: TABLE_POINTER:TABLE_INDEX:OFFSET_POINTER[:FLAGS]\n'
-    '    Flags: w - Index is word, W - Offset is word, d - Index is pointer\n'
-    '           o - Print final offset\n'
+    '    Flags: d - Multiply index by 2, o - Print final offset\n'
+    '    Defaults: table_ptr: w, index: b, offset: b\n'
     '    Example: 0x66ec:0xef:0xf3:d will read data for CH1 of Outrun Europa.\n'),
 
   'order': (
