@@ -40,10 +40,10 @@ def subargs_parser(tokens):
 
 def parse_addr(tokens):
   regex = (
-    r'(@)?'                          # is this a pointer to addr?
-    r'((?:0x)?[0-9a-fA-F]+)'         # what's the addr?
-    r'(?:,([dq]))?'                  # is this dword or qword?
-    r'([+-](?:0x)?[0-9a-fA-F]+)?'  # add some more bytes to that addr?
+    r'(@)?'                         # is this a pointer to addr?
+    r'((?:-)?(?:0x)?[0-9a-fA-F]+)'  # what's the addr?
+    r'(?:,([dq]))?'                 # is this dword or qword?
+    r'([+-](?:0x)?[0-9a-fA-F]+)?'   # add some more bytes to that addr?
   )
   result = re.match(regex, tokens)
   resolve, addr, width, offset = result.groups()
