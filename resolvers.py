@@ -7,7 +7,6 @@ from util import int_autobase
 class PointerResolver:
   ''' Single pointer value resolver + dynamic offset.
   We have static or dynamic track start value and driver optionally stores offset into it.
-  The pointer is stored as LE word at specified memory location and index is a byte.
   '''
 
   base_ptr = None
@@ -67,11 +66,11 @@ class StackResolver:
   def __call__(self, _memory, _data):
 
     if self.conditional_shift:
-      ptr = self.stack(self.stack.address + self.depth()*self.direction)
+      ptr = self.stack(offset=self.depth()*self.direction)
       if ptr < self.low or ptr > self.high:
-        ptr = self.stack(self.stack.address + self.depth()*self.direction + self.shift)
+        ptr = self.stack(offset=self.depth()*self.direction + self.shift)
     else:
-      ptr = self.stack(self.stack.address + self.depth()*self.direction + self.shift)
+      ptr = self.stack(offset=self.depth()*self.direction + self.shift)
 
     self.info = f'{self.stack.fmt},{self.depth.fmt}'.format(ptr, ~self.depth)
 

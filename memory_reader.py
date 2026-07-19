@@ -179,9 +179,13 @@ class Pointer():
     '''
     return self.value
 
-  def __call__(self, addr=None):
+  def __call__(self, addr=None, offset=None):
 
-    if addr is None: self.value = self.partial()
-    else: self.value = self.reader(addr, *self.extra)
+    if addr is not None:
+      self.value = self.reader(addr, *self.extra)
+    elif offset is not None:
+      self.value = self.reader(self.address + offset, *self.extra)
+    else:
+      self.value = self.partial()
 
     return self.value
