@@ -57,6 +57,10 @@ class Memory:
   def segment(self, address):
     return int.from_bytes(self[address:address+2], 'little') << 4
 
+  # Sometimes seen as upper 8 bit addres on 6502
+  def page(self, address):
+    return int.from_bytes(self[address]) << 8
+
   def dword_le(self, address):
     return int.from_bytes(self[address:address+4], 'little')
 
@@ -130,11 +134,12 @@ class Pointer():
   # Shorthands that will be passed into kind argument
   mapping = {
     'b': ('byte',     '{:02x}'),
-    'w': ( 'word_le', '{:04x}'), 'W': ( 'word_be', '{:04x}'),
-    'v': ('vword_le', '{:04x}'), 'V': ('vword_be', '{:04x}'),
-    'd': ('dword_le', '{:04x}'), 'D': ('dword_be', '{:04x}'),
-    'q': ('qword_le', '{:08x}'), 'Q': ('qword_be', '{:08x}'),
+    'p': ('page',     '{:04x}'),
     's': ('segment',  '{:05x}'),
+    'w': ( 'word_le', '{:04x}'),  'W': ( 'word_be', '{:04x}'),
+    'v': ('vword_le', '{:04x}'),  'V': ('vword_be', '{:04x}'),
+    'd': ('dword_le', '{:08x}'),  'D': ('dword_be', '{:08x}'),
+    'q': ('qword_le', '{:016x}'), 'Q': ('qword_be', '{:016x}'),
   }
 
   value = None
