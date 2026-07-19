@@ -23,10 +23,11 @@
     "0x91": ["oct+,p"],
     "0x92": ["oct-,p"],
     "0x93": ["sTran", ",s"],
-    "0x94": ["sDamp", ""],
-    "0x95": ["hold"],
+    "0x94": ["vol", ""],
+    "0x95": ["---,p"],
     "0x96": ["sPWidth", ""],
-    "0x9a": ["sTempo", ""],
+    "0x9e": ["sweep", ",h"],
+    "0x9a": ["sweep2", ""],
     "0x9b": ["cmd9B", ""],
     "0xa1": ["jump,e", "addr,wh"],
     "0xa2": ["stop,e"],
@@ -34,6 +35,10 @@
     "0xbc": ["setLoop", ""],
     "0xbd": ["loopRet,e"],
     "0xbe": ["call,e", "addr,wh"],
-    "0xbf": ["return,e"]
+    "0xbf": ["return,e"],
+    "0xc1": ["fine", ",s"],
+    "0xc2": ["cmdC2"],
+    "0xc3": ["cmdC3"],
+    "0xc4": ["dpcm", ""]
   }
 }
