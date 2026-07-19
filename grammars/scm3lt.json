@@ -1,0 +1,17 @@
+{
+  "notes": {
+    "lo": "0x0",
+    "hi": "0x60",
+    "prefixes": ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"],
+    "args": ["wait"]
+  },
+  "ranges": {
+    "step": ["0x00", "0x50"],
+    "velo": ["0x51", "0x7f"]
+  },
+  "commands" : {
+    "0x50": ["legato", ""],
+    "0x7f": ["jump,e", "addr,w"]
+    "0x7d": ["return,e"]
+  }
+}
