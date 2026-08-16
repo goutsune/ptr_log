@@ -118,8 +118,7 @@ PRINTER_MAP = {
     ' Prints parsed commands from definition file, falls back to hex\n'),
   'fushigi': (
     FushigiPrinter,
-    ' Decoder for Fushigi no Umi no Nadia sequencer on SMD'
-  )
+    ' Decoder for Fushigi no Umi no Nadia sequencer on SMD\n')
 }
 
 
