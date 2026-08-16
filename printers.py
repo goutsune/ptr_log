@@ -160,6 +160,38 @@ class LinePrinter(HexPrinter):
     return super().format_tokens(tokens)
 
 
+class AsciiPrinter(HexPrinter):
+
+    def format_tokens(self, tokens):
+        results = []
+        ascii_chars = []
+        hex_start = None
+
+        for i in range(len(tokens)):
+            token_slice = tokens[i:i+1]
+            val = int.from_bytes(token_slice, byteorder='big')
+
+            if 0x20 <= val <= 0x7f:
+                if hex_start is not None:
+                    results.extend(super().format_tokens(tokens[hex_start:i]))
+                    hex_start = None
+                ascii_chars.append(chr(val))
+            else:
+                if ascii_chars:
+                    results.append(''.join(ascii_chars))
+                    ascii_chars = []
+                if hex_start is None:
+                    hex_start = i
+
+        # Flush any remaining buffers at the end of the sequence
+        if hex_start is not None:
+            results.extend(super().format_tokens(tokens[hex_start:]))
+        if ascii_chars:
+            results.append(''.join(ascii_chars))
+
+        return results
+
+
 class MappedPrinter(HexPrinter):
 
   ranges = None
