@@ -113,6 +113,10 @@ def mainloop(filename, ram_ptr, data_ptr, resolve_method, resolver_settings, shi
           f'{blanks}│'
           f'{printer.prefix}{row}{printer.suffix}\n')
 
+    # A very silly way to detect track change and clear screen
+    if ptr == 0 or ptr == 0xffff:
+      stdout.write('\033[2J')
+
     # Print preview line from the current location
     try:
       printer(PREV, data[ptr: ptr+preview])
