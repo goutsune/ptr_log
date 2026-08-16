@@ -538,6 +538,9 @@ class MappedPrinter(HexPrinter):
 
 
 class FushigiPrinter(HexPrinter):
+  '''Parses Namco's tracker-like format seen in Fushigi no Umi no Nadia.
+  Format is inherently stateful, not possible to parse mid-pattern due to stored cmd masks
+  '''
   NOTES = ["C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"]
 
   def __init__(self, *args, **kwargs):
