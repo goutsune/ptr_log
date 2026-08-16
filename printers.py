@@ -212,11 +212,18 @@ class MappedPrinter(HexPrinter):
   def parse_configuration(self, cfg):
     # Parse note range
     if 'notes' in cfg:
+      # Support note suffixes/prefixes, notably velocity and length.
+      # Arg is tri-state, None disables, "post" set's to True
+      arg = cfg['notes']['arg'] if 'arg' in cfg['notes'] else None
+      if arg is not None:
+        arg = True if arg == "post" else False
+
       self.notes = SN(
         lo=int(cfg['notes']['lo'], 0),
         hi=int(cfg['notes']['hi'], 0),
         prefixes=cfg['notes']['prefixes'],
-        length=len(cfg['notes']['prefixes']))
+        length=len(cfg['notes']['prefixes']),
+        arg=arg)
 
     if 'ranges' in cfg:
       self.ranges = [SN(
@@ -307,7 +314,7 @@ class MappedPrinter(HexPrinter):
       cfg = json.load(handle)
     self.parse_configuration(cfg)
 
-  def note(self, value):
+  def note(self, value, arg=None):
     '''Find and tokenize note with octave, lo and high values are INCLUSIVE.
     '''
     if self.notes is None:
@@ -318,10 +325,16 @@ class MappedPrinter(HexPrinter):
 
     # Remove command offset
     n = value - self.notes.lo
+    if arg is not None:
 
-    return '{note}{octave}'.format(
-      note=self.notes.prefixes[n % self.notes.length],
-      octave=n // self.notes.length)
+      return '{note}{octave}, {arg}'.format(
+        note=self.notes.prefixes[n % self.notes.length],
+        octave=n // self.notes.length,
+        arg=arg)
+    else:
+      return '{note}{octave}'.format(
+        note=self.notes.prefixes[n % self.notes.length],
+        octave=n // self.notes.length)
 
   def ranged(self, value):
     '''Find and tokenize single range parameter, lo and high values are INCLUSIVE.
@@ -424,11 +437,35 @@ class MappedPrinter(HexPrinter):
 
       # Try parsing as note if we didn't find anything yet
       if line is None:
-        line = self.note(tokens[0] if direction else tokens[-1])
+        # Note only
+        if self.notes.arg is None:
+          note_byte = tokens[0] if direction else tokens[-1]
+          arg_byte = None
+        # Post-note argument
+        elif self.notes.arg:
+          note_byte = tokens[0] if direction else tokens[-1]
+          try:
+            arg_byte = tokens[1] if direction else tokens[-2]
+          except IndexError:
+            arg_byte = None
+        # Pre-note argument
+        else:
+          arg_byte = tokens[0] if direction else tokens[-1]
+          try:
+            note_byte = tokens[1] if direction else tokens[-2]
+          except IndexError:
+            note_byte = arg_byte
+            arg_byte = None
+
+        line = self.note(note_byte, arg_byte)
 
         if line:
-          tokens = tokens[1:] if direction else tokens[:-1]
-          to_process -= 1
+          if arg_byte is not None:
+            tokens = tokens[2:] if direction else tokens[:-2]
+            to_process -= 2
+          else:
+            tokens = tokens[1:] if direction else tokens[:-1]
+            to_process -= 1
 
       # Finally as a range
       if line is None:
